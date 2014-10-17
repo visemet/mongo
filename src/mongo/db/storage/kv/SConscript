@@ -30,5 +30,8 @@ env.Library(
         'kv_engine_test_utils.cpp',
         'kv_rollback_test.cpp',
         ],
-    LIBDEPS=['kv_engine_core']
+    LIBDEPS=[
+        'kv_engine_core',
+        '$BUILD_DIR/mongo/background_job',
+        ]
     )
