@@ -27,6 +27,8 @@ env.Library(
     target='kv_engine_test_harness',
     source=[
         'kv_engine_test_harness.cpp',
+        'kv_engine_test_utils.cpp',
+        'kv_rollback_test.cpp',
         ],
     LIBDEPS=['kv_engine_core']
     )
