@@ -64,6 +64,10 @@ namespace mongo {
                                                  const DocWriter* doc,
                                                  bool enforceQuota);
 
+        virtual long long dataSize( OperationContext* txn ) const {
+            return _records.empty() ? 0 : 1;
+        }
+
         virtual long long numRecords( OperationContext* txn ) const { return _records.size(); }
 
         virtual Status touch(OperationContext* txn, BSONObjBuilder* output) const;
@@ -151,8 +155,6 @@ namespace mongo {
                                     int infoLevel = 0) const {
             invariant(false);
         }
-
-        virtual long long dataSize(OperationContext* txn) const { invariant(false); }
 
         virtual Record* recordFor(const DiskLoc& loc) const { invariant(false); }
 
