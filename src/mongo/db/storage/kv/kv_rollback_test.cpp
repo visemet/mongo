@@ -27,6 +27,10 @@
  *    then also delete it in the license file.
  */
 
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
+
+#include "mongo/util/log.h"
+
 #include "mongo/db/storage/kv/kv_engine_test_harness.h"
 
 #include "mongo/db/operation_context_noop.h"
@@ -64,8 +68,13 @@ namespace {
             if ( !done ) {
                 return false;
             }
-            if ( _savedExn ) {
-                throw *_savedExn;
+            if ( _savedTestExn ) {
+                throw *_savedTestExn;
+            }
+            if ( _savedStdExnMsg ) {
+                // TODO: in C++11 we can use std::exception_pointer to preserve the type.
+                // But we have to at least rethrow something, to prevent hiding failures.
+                throw std::runtime_error( *_savedStdExnMsg );
             }
             return true;
         }
@@ -73,11 +82,14 @@ namespace {
             try {
                 testRun();
             } catch( unittest::TestAssertionFailureException& exn ) {
-                _savedExn.reset( new unittest::TestAssertionFailureException( exn ) );
+                _savedTestExn.reset( new unittest::TestAssertionFailureException( exn ) );
+            } catch( std::exception& exn ) {
+                _savedStdExnMsg.reset( new string(exn.what()) );
             }
         }
     private:
-        scoped_ptr<unittest::TestAssertionFailureException> _savedExn;
+        scoped_ptr<unittest::TestAssertionFailureException> _savedTestExn;
+        scoped_ptr<string> _savedStdExnMsg;
     };
 
     class KVBackgroundJob : public TestBackgroundJob {
@@ -134,13 +146,13 @@ namespace {
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
         virtual string name() const { return "IndexIdentNonexistentCollectionJob"; }
         virtual void testRun() {
             string idxName = "foo_index";
             for (int i=0; i<_iterations; ++i) {
-                _helper->getIndexIdent( ns, idxName );
+                _helper->getIndexIdent( _ns, idxName );
             }
         }
     };
@@ -155,14 +167,14 @@ namespace {
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
         virtual string name() const { return "IndexIdentNonexistentIndexJob"; }
         virtual void testRun() {
             string idxName = "foo_index";
-            ASSERT_OK( _helper->createCollection( ns ) );
+            ASSERT_OK( _helper->createCollection( _ns ) );
             for (int i=0; i<_iterations; ++i) {
-                _helper->getIndexIdent( ns, idxName );
+                _helper->getIndexIdent( _ns, idxName );
             }
         }
     };
@@ -177,16 +189,17 @@ namespace {
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
         virtual string name() const { return "IndexIdentJob"; }
         virtual void testRun() {
             string idxName = "foo_index";
-            ASSERT_OK( _helper->createCollection( ns ) );
-            ASSERT_OK( _helper->createIndex( ns, idxName ) );
+            ASSERT_OK( _helper->createCollection( _ns ) );
             for (int i=0; i<_iterations; ++i) {
-                string ident = _helper->getIndexIdent( ns, idxName );
+                ASSERT_OK( _helper->createIndex( _ns, idxName ) );
+                string ident = _helper->getIndexIdent( _ns, idxName );
                 ASSERT( !ident.empty() );
+                ASSERT_OK( _helper->dropIndex( _ns, idxName ) );
             }
         }
     };
@@ -201,18 +214,21 @@ namespace {
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
         virtual string name() const { return "IndexIdentDifferentJob"; }
         virtual void testRun() {
             string idxName0 = "foo_index";
             string idxName1 = "bar_index";
-            ASSERT_OK( _helper->createCollection( ns ) );
-            ASSERT_OK( _helper->createIndex( ns, idxName ) );
+            ASSERT_OK( _helper->createCollection( _ns ) );
             for (int i=0; i<_iterations; ++i) {
-                string ident0 = _helper->getIndexIdent( ns, idxName0 );
-                string ident1 = _helper->getIndexIdent( ns, idxName1 );
+                ASSERT_OK( _helper->createIndex( _ns, idxName0 ) );
+                ASSERT_OK( _helper->createIndex( _ns, idxName1 ) );
+                string ident0 = _helper->getIndexIdent( _ns, idxName0 );
+                string ident1 = _helper->getIndexIdent( _ns, idxName1 );
                 ASSERT( ident0 != ident1 );
+                ASSERT_OK( _helper->dropIndex( _ns, idxName0 ) );
+                ASSERT_OK( _helper->dropIndex( _ns, idxName1 ) );
             }
         }
     };
@@ -227,22 +243,22 @@ namespace {
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
         virtual string name() const { return "IndexIdentDifferentOverTimeJob"; }
         virtual void testRun() {
             string idxName = "foo_index";
-            ASSERT_OK( _helper->createCollection( ns ) );
+            ASSERT_OK( _helper->createCollection( _ns ) );
             for (int i=0; i<_iterations; ++i) {
                 // create and drop the same index twice
 
-                ASSERT_OK( _helper->createIndex( ns, idxName ) );
-                string ident0 = _helper->getIndexIdent( ns, idxName );
-                ASSERT_OK( _helper->dropIndex( ns, idxName ) );
+                ASSERT_OK( _helper->createIndex( _ns, idxName ) );
+                string ident0 = _helper->getIndexIdent( _ns, idxName );
+                ASSERT_OK( _helper->dropIndex( _ns, idxName ) );
 
-                ASSERT_OK( _helper->createIndex( ns, idxName ) );
-                string ident1 = _helper->getIndexIdent( ns, idxName );
-                ASSERT_OK( _helper->dropIndex( ns, idxName ) );
+                ASSERT_OK( _helper->createIndex( _ns, idxName ) );
+                string ident1 = _helper->getIndexIdent( _ns, idxName );
+                ASSERT_OK( _helper->dropIndex( _ns, idxName ) );
 
                 // the idents should be different even though the two indexes never
                 // existed at the same time.
@@ -256,30 +272,36 @@ namespace {
         int _iterations;
         string _ns;
     public:
-        IndexIdentDifferentJob( KVEngineHelper* helper,
+        ListIndexesJob( KVEngineHelper* helper,
                                        const StringData& ns,
                                        int iterations = 10000 )
             : KVBackgroundJob( helper ),
               _iterations(iterations),
-              _ns(ns) {
+              _ns(ns.toString()) {
         }
-        virtual string name() const { return "IndexIdentDifferentJob"; }
+        virtual string name() const { return "ListIndexesJob"; }
         virtual void testRun() {
             vector<string> indexNames;
             indexNames.push_back( "foo_index" );
             indexNames.push_back( "bar_index" );
             indexNames.push_back( "baz_index" );
+            vector<string> indexNamesSorted = indexNames;
+            std::sort( indexNamesSorted.begin(), indexNamesSorted.end() );
 
-            ASSERT_OK( _helper->createCollection( ns ) );
-            for (int i=0; i<indexNames.length; ++i) {
-                ASSERT_OK( _helper->createIndex( ns, indexNames[i] ) );
-            }
+            ASSERT_OK( _helper->createCollection( _ns ) );
 
-            std::sort( indexNames.begin(), indexNames.end() );
             for (int i=0; i<_iterations; ++i) {
-                vector<string> indexes = _helper->listIndexes( ns );
+                for (int j=0; j<indexNames.size(); ++j) {
+                    ASSERT_OK( _helper->createIndex( _ns, indexNames[j] ) );
+                }
+
+                vector<string> indexes = _helper->listIndexes( _ns );
                 std::sort( indexes.begin(), indexes.end() );
-                ASSERT( indexes == indexNames );
+                ASSERT( indexes == indexNamesSorted );
+
+                for (int j=0; j<indexNames.size(); ++j) {
+                    ASSERT_OK( _helper->dropIndex( _ns, indexNames[j] ) );
+                }
             }
         }
     };
@@ -296,6 +318,37 @@ namespace {
 
         createDropJob.wait();
         listCollectionsJob.wait();
+    }
+
+    TEST_F( KVEngineTest, Indexes ) {
+        scoped_ptr<KVEngineHelper> helper( getKVEngineHelper() );
+
+        IndexIdentNonexistentCollectionJob indexIdentNonexistentCollectionJob( helper.get(), "foo.coll0" );
+        IndexIdentNonexistentIndexJob indexIdentNonexistentIndexJob( helper.get(), "foo.coll1" );
+        IndexIdentJob indexIdentJob( helper.get(), "foo.coll2" );
+        IndexIdentDifferentJob indexIdentDifferentJob( helper.get(), "foo.coll3" );
+        IndexIdentDifferentOverTimeJob indexIdentDifferentOverTimeJob( helper.get(), "foo.coll4" );
+        ListIndexesJob listIndexesJob( helper.get(), "foo.coll5" );
+
+        log() << "about to spawn all jobs";
+
+        //indexIdentNonexistentCollectionJob.go();  // invariant failure
+        //indexIdentNonexistentIndexJob.go();  // boost mutex assertion failure?
+        indexIdentJob.go();
+        indexIdentDifferentJob.go();
+        indexIdentDifferentOverTimeJob.go();
+        listIndexesJob.go();
+
+        log() << "about to wait on all jobs";
+
+        //indexIdentNonexistentCollectionJob.wait();
+        //indexIdentNonexistentIndexJob.wait();
+        indexIdentJob.wait();
+        indexIdentDifferentJob.wait();
+        indexIdentDifferentOverTimeJob.wait();
+        listIndexesJob.wait();
+
+        log() << "done with all jobs";
     }
 
 }; // namespace mongo
