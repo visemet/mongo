@@ -63,32 +63,38 @@ namespace {
     class TestBackgroundJob : public BackgroundJob {
     public:
         virtual void testRun() = 0;
-        bool wait( unsigned msTimeOut = 0 ) {
-            bool done = BackgroundJob::wait( msTimeOut );
-            if ( !done ) {
-                return false;
-            }
+        void rethrow( unsigned msTimeOut = 0 ) {
+            invariant( getState() == Done );
             if ( _savedTestExn ) {
                 throw *_savedTestExn;
+            }
+            if ( _savedDbExnInfo ) {
+                DBException exn( *_savedDbExnInfo );
+                log() << "background job had caught a DBException: " << exn;
+                log() << "  rethrowing it";
+                throw exn;
             }
             if ( _savedStdExnMsg ) {
                 // TODO: in C++11 we can use std::exception_pointer to preserve the type.
                 // But we have to at least rethrow something, to prevent hiding failures.
                 throw std::runtime_error( *_savedStdExnMsg );
             }
-            return true;
         }
         void run() {
             try {
                 testRun();
             } catch( unittest::TestAssertionFailureException& exn ) {
                 _savedTestExn.reset( new unittest::TestAssertionFailureException( exn ) );
+            } catch( DBException& exn ) {
+                log() << "background job catching DBException: " << exn;
+                _savedDbExnInfo.reset( new ExceptionInfo(exn.getInfo()) );
             } catch( std::exception& exn ) {
                 _savedStdExnMsg.reset( new string(exn.what()) );
             }
         }
     private:
         scoped_ptr<unittest::TestAssertionFailureException> _savedTestExn;
+        scoped_ptr<ExceptionInfo> _savedDbExnInfo;
         scoped_ptr<string> _savedStdExnMsg;
     };
 
@@ -333,7 +339,7 @@ namespace {
         log() << "about to spawn all jobs";
 
         //indexIdentNonexistentCollectionJob.go();  // invariant failure
-        //indexIdentNonexistentIndexJob.go();  // boost mutex assertion failure?
+        //indexIdentNonexistentIndexJob.go();  // "invalid parameter: expected an object ()"
         indexIdentJob.go();
         indexIdentDifferentJob.go();
         indexIdentDifferentOverTimeJob.go();
@@ -349,6 +355,15 @@ namespace {
         listIndexesJob.wait();
 
         log() << "done with all jobs";
+
+        log() << "checking if any job threw an exception";
+        //indexIdentNonexistentCollectionJob.rethrow();
+        //indexIdentNonexistentIndexJob.rethrow();
+        indexIdentJob.rethrow();
+        indexIdentDifferentJob.rethrow();
+        indexIdentDifferentOverTimeJob.rethrow();
+        listIndexesJob.rethrow();
+
     }
 
 }; // namespace mongo
