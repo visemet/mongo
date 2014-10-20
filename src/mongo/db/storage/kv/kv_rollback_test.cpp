@@ -33,10 +33,11 @@
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/storage/kv/kv_catalog.h"
 #include "mongo/db/storage/kv/kv_engine.h"
+#include "mongo/db/storage/kv/kv_engine_test_fixture.h"
+#include "mongo/db/storage/kv/kv_engine_test_utils.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 #include "mongo/unittest/unittest.h"
-
 
 namespace mongo {
 
@@ -71,8 +72,8 @@ namespace {
         void run() {
             try {
                 testRun();
-            } catch(unittest::TestAssertionFailureException& exn) {
-                _savedExn.reset(new unittest::TestAssertionFailureException(exn));
+            } catch( unittest::TestAssertionFailureException& exn ) {
+                _savedExn.reset( new unittest::TestAssertionFailureException( exn ) );
             }
         }
     private:
@@ -81,31 +82,23 @@ namespace {
 
     class KVBackgroundJob : public TestBackgroundJob {
     public:
-        KVBackgroundJob(KVCatalog* catalog, KVEngine* engine)
-            : _catalog(catalog)
-            , _engine(engine)
-        {}
+        KVBackgroundJob( KVEngineHelper* helper ) : _helper( helper ) { }
     protected:
-        KVCatalog* _catalog;
-        KVEngine* _engine;
+        KVEngineHelper* _helper; // not owned here
     };
 
     class ListCollectionsJob : public KVBackgroundJob {
     private:
         int _iterations;
     public:
-        ListCollectionsJob(
-                KVCatalog* catalog, KVEngine* engine,
-                int iterations = 10000
-            ):
-            KVBackgroundJob(catalog, engine),
-            _iterations(iterations)
-        {}
+        ListCollectionsJob( KVEngineHelper* helper,
+                            int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations( iterations ) { }
         virtual string name() const { return "ListCollectionsJob"; }
         virtual void testRun() {
-            for (int i=0; i<_iterations; ++i) {
-                std::vector<std::string> collNames;
-                _catalog->getAllCollections( &collNames );
+            for (int i = 0; i < _iterations; ++i) {
+                std::vector<std::string> collNames = _helper->listCollections();
                 ASSERT( collNames.size() == 0 || collNames.size() == 1 );
             }
         }
@@ -116,57 +109,27 @@ namespace {
         int _iterations;
         CollectionOptions _collectionOptions;
     public:
-        CreateDropJob(
-                KVCatalog* catalog, KVEngine* engine,
-                int iterations = 10000,
-                CollectionOptions collectionOptions = CollectionOptions()
-            ):
-            KVBackgroundJob(catalog, engine),
-            _iterations(iterations),
-            _collectionOptions(collectionOptions)
-        {}
+        CreateDropJob( KVEngineHelper* helper,
+                       int iterations = 10000,
+                       CollectionOptions collectionOptions = CollectionOptions() )
+            : KVBackgroundJob( helper ),
+              _iterations( iterations ),
+              _collectionOptions( collectionOptions ) { }
         virtual string name() const { return "CreateDropJob"; }
         virtual void testRun() {
-            for (int i=0; i<_iterations; ++i) {
-                // create a collection called a.b
-                {
-                    MyOperationContext opCtx( _engine );
-                    WriteUnitOfWork uow( &opCtx );
-                    ASSERT_OK( _catalog->newCollection( &opCtx, "a.b", _collectionOptions ) );
-                    uow.commit();
-                }
-
-                // drop the collection called a.b
-                {
-                    MyOperationContext opCtx( _engine );
-                    WriteUnitOfWork uow( &opCtx );
-                    ASSERT_OK( _catalog->dropCollection( &opCtx, "a.b" ) );
-                    uow.commit();
-                }
+            for (int i = 0; i < _iterations; ++i) {
+                ASSERT_OK( _helper->createCollection( "a.b" ) );
+                ASSERT_OK( _helper->dropCollection( "a.b" ) );
             }
-
         }
     };
 
-    TEST( KVEngineTestHarness, HelloWorld ) {
-        scoped_ptr<KVHarnessHelper> helper( KVHarnessHelper::create() );
-        KVEngine* engine = helper->getEngine();
-        ASSERT( engine );
+    TEST_F( KVEngineTest, HelloWorld ) {
+        scoped_ptr<KVEngineHelper> helper( getKVEngineHelper() );
 
-        // create a KVCatalog with a backing RecordStore
-        scoped_ptr<RecordStore> rs;
-        scoped_ptr<KVCatalog> catalog;
-        {
-            MyOperationContext opCtx( engine );
-            WriteUnitOfWork uow( &opCtx );
-            ASSERT_OK( engine->createRecordStore( &opCtx, "catalog", "catalog", CollectionOptions() ) );
-            rs.reset( engine->getRecordStore( &opCtx, "catalog", "catalog", CollectionOptions() ) );
-            catalog.reset( new KVCatalog( rs.get() ) );
-            uow.commit();
-        }
+        CreateDropJob createDropJob( helper.get() );
+        ListCollectionsJob listCollectionsJob( helper.get() );
 
-        CreateDropJob createDropJob( catalog.get(), engine );
-        ListCollectionsJob listCollectionsJob( catalog.get(), engine );
         createDropJob.go();
         listCollectionsJob.go();
 

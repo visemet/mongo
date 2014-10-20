@@ -1,4 +1,4 @@
-// kv_engine_test_utils.h
+// kv_engine_test_fixture.h
 
 /**
  *    Copyright (C) 2014 MongoDB Inc.
@@ -30,59 +30,51 @@
 
 #pragma once
 
-#include "mongo/db/operation_context_noop.h"
 #include "mongo/db/storage/kv/kv_catalog.h"
 #include "mongo/db/storage/kv/kv_engine.h"
+#include "mongo/db/storage/kv/kv_engine_test_harness.h"
+#include "mongo/db/storage/kv/kv_engine_test_utils.h"
+#include "mongo/db/storage/record_store.h"
+#include "mongo/unittest/unittest.h"
 
 namespace mongo {
 
-    class KVOperationContext : public OperationContextNoop {
+    class KVEngineTest : public mongo::unittest::Test {
     public:
-        KVOperationContext( KVEngine* engine )
-            : OperationContextNoop( engine->newRecoveryUnit() ) {
-        }
-    };
-
-    class KVEngineHelper {
-    public:
-        KVEngineHelper( KVEngine* engine, KVCatalog* catalog )
-            : _engine( engine ), _catalog( catalog ) {
+        KVEngineTest() : _helper( KVHarnessHelper::create() ) {
         }
 
-        // Operations on collections
+        KVEngineHelper* getKVEngineHelper() {
+            return new KVEngineHelper( _helper->getEngine(), _catalog.get() );
+        }
 
-        Status createCollection( const StringData& ns,
-                                 bool rollback = false );
+        void setUp() {
+            KVEngine* engine = _helper->getEngine();
+            ASSERT( engine );
 
-        Status renameCollection( const StringData& fromNS,
-                                 const StringData& toNS,
-                                 bool rollback = false );
+            // Create a KVCatalog with a backing RecordStore
+            {
+                KVOperationContext opCtx( engine );
+                WriteUnitOfWork uow( &opCtx );
+                ASSERT_OK( engine->createRecordStore( &opCtx,
+                                                      "catalog",
+                                                      "catalog",
+                                                      CollectionOptions() ) );
 
-        Status dropCollection( const StringData& ns,
-                               bool rollback = false );
+                _rs.reset( engine->getRecordStore( &opCtx,
+                                                   "catalog",
+                                                   "catalog",
+                                                   CollectionOptions() ) );
 
-        std::string getCollectionIdent( const StringData& ns );
-
-        std::vector<std::string> listCollections();
-
-        // Operations on indexes
-
-        Status createIndex( const StringData& ns,
-                            const StringData& idxName,
-                            bool rollback = false );
-
-        Status dropIndex( const StringData& ns,
-                          const StringData& idxName,
-                          bool rollback = false );
-
-        std::vector<std::string> listIndexes( const StringData& ns );
-
-        std::string getIndexIdent( const StringData& ns,
-                                   const StringData& idxName );
+                _catalog.reset( new KVCatalog( _rs.get() ) );
+                uow.commit();
+            }
+        }
 
     private:
-        KVEngine* _engine; // not owned here
-        KVCatalog* _catalog; // not owned here
+        scoped_ptr<KVHarnessHelper> _helper;
+        scoped_ptr<RecordStore> _rs;
+        scoped_ptr<KVCatalog> _catalog;
     };
 
 } // namespace mongo
