@@ -124,6 +124,167 @@ namespace {
         }
     };
 
+    class IndexIdentNonexistentCollectionJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentNonexistentCollectionJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentNonexistentCollectionJob"; }
+        virtual void testRun() {
+            string idxName = "foo_index";
+            for (int i=0; i<_iterations; ++i) {
+                _helper->getIndexIdent( ns, idxName );
+            }
+        }
+    };
+
+    class IndexIdentNonexistentIndexJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentNonexistentIndexJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentNonexistentIndexJob"; }
+        virtual void testRun() {
+            string idxName = "foo_index";
+            ASSERT_OK( _helper->createCollection( ns ) );
+            for (int i=0; i<_iterations; ++i) {
+                _helper->getIndexIdent( ns, idxName );
+            }
+        }
+    };
+
+    class IndexIdentJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentJob"; }
+        virtual void testRun() {
+            string idxName = "foo_index";
+            ASSERT_OK( _helper->createCollection( ns ) );
+            ASSERT_OK( _helper->createIndex( ns, idxName ) );
+            for (int i=0; i<_iterations; ++i) {
+                string ident = _helper->getIndexIdent( ns, idxName );
+                ASSERT( !ident.empty() );
+            }
+        }
+    };
+
+    class IndexIdentDifferentJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentDifferentJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentDifferentJob"; }
+        virtual void testRun() {
+            string idxName0 = "foo_index";
+            string idxName1 = "bar_index";
+            ASSERT_OK( _helper->createCollection( ns ) );
+            ASSERT_OK( _helper->createIndex( ns, idxName ) );
+            for (int i=0; i<_iterations; ++i) {
+                string ident0 = _helper->getIndexIdent( ns, idxName0 );
+                string ident1 = _helper->getIndexIdent( ns, idxName1 );
+                ASSERT( ident0 != ident1 );
+            }
+        }
+    };
+
+    class IndexIdentDifferentOverTimeJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentDifferentOverTimeJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentDifferentOverTimeJob"; }
+        virtual void testRun() {
+            string idxName = "foo_index";
+            ASSERT_OK( _helper->createCollection( ns ) );
+            for (int i=0; i<_iterations; ++i) {
+                // create and drop the same index twice
+
+                ASSERT_OK( _helper->createIndex( ns, idxName ) );
+                string ident0 = _helper->getIndexIdent( ns, idxName );
+                ASSERT_OK( _helper->dropIndex( ns, idxName ) );
+
+                ASSERT_OK( _helper->createIndex( ns, idxName ) );
+                string ident1 = _helper->getIndexIdent( ns, idxName );
+                ASSERT_OK( _helper->dropIndex( ns, idxName ) );
+
+                // the idents should be different even though the two indexes never
+                // existed at the same time.
+                ASSERT( ident0 != ident1 );
+            }
+        }
+    };
+
+    class ListIndexesJob : public KVBackgroundJob {
+    private:
+        int _iterations;
+        string _ns;
+    public:
+        IndexIdentDifferentJob( KVEngineHelper* helper,
+                                       const StringData& ns,
+                                       int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _iterations(iterations),
+              _ns(ns) {
+        }
+        virtual string name() const { return "IndexIdentDifferentJob"; }
+        virtual void testRun() {
+            vector<string> indexNames;
+            indexNames.push_back( "foo_index" );
+            indexNames.push_back( "bar_index" );
+            indexNames.push_back( "baz_index" );
+
+            ASSERT_OK( _helper->createCollection( ns ) );
+            for (int i=0; i<indexNames.length; ++i) {
+                ASSERT_OK( _helper->createIndex( ns, indexNames[i] ) );
+            }
+
+            std::sort( indexNames.begin(), indexNames.end() );
+            for (int i=0; i<_iterations; ++i) {
+                vector<string> indexes = _helper->listIndexes( ns );
+                std::sort( indexes.begin(), indexes.end() );
+                ASSERT( indexes == indexNames );
+            }
+        }
+    };
+
+
     TEST_F( KVEngineTest, HelloWorld ) {
         scoped_ptr<KVEngineHelper> helper( getKVEngineHelper() );
 
