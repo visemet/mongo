@@ -33,6 +33,8 @@
 
 #include "mongo/db/storage/kv/kv_engine_test_harness.h"
 
+#include <algorithm>
+
 #include "mongo/db/operation_context_noop.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/storage/kv/kv_catalog.h"
@@ -140,6 +142,157 @@ namespace {
                 ASSERT_OK( _helper->dropCollection( "a.b" ) );
             }
         }
+    };
+
+    // Create a collection and verify that it exists within the list of namespaces.
+    class CreateCollectionJob : public KVBackgroundJob {
+    public:
+        CreateCollectionJob( KVEngineHelper* helper,
+                             string ns,
+                             int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _ns( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "CreateCollectionJob"; }
+        virtual void testRun() {
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_OK( _helper->createCollection( _ns ) );
+
+                vector<string> collNames = _helper->listCollections();
+                vector<string>::iterator it = std::find( collNames.begin(), collNames.end(), _ns );
+                ASSERT( it != collNames.end() );
+                ASSERT_EQUALS( _ns, *it );
+
+                ASSERT_OK( _helper->dropCollection( _ns ) );
+
+                collNames = _helper->listCollections();
+                it = std::find( collNames.begin(), collNames.end(), _ns );
+                ASSERT( it == collNames.end() );
+            }
+        }
+    private:
+        string _ns;
+        int _iterations;
+    };
+
+    // Create a collection and verify that trying to create a collection
+    // with the same namespace fails.
+    class CreateSameCollectionJob : public KVBackgroundJob {
+    public:
+        CreateSameCollectionJob( KVEngineHelper* helper,
+                                 string ns,
+                                 int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _ns( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "CreateSameCollectionJob"; }
+        virtual void testRun() {
+            ASSERT_OK( _helper->createCollection( _ns ) );
+
+            vector<string> collNames = _helper->listCollections();
+            vector<string>::iterator it = std::find( collNames.begin(), collNames.end(), _ns );
+            ASSERT( it != collNames.end() );
+            ASSERT_EQUALS( _ns, *it );
+
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_EQUALS( ErrorCodes::NamespaceExists, _helper->createCollection( _ns ) );
+            }
+        }
+    private:
+        string _ns;
+        int _iterations;
+    };
+
+    // Create a collection and verify that its identifier does not change.
+    class GetCollectionIdentJob : public KVBackgroundJob {
+    public:
+        GetCollectionIdentJob( KVEngineHelper* helper,
+                               string ns,
+                               int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _ns( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "GetCollectionIdentJob"; }
+        virtual void testRun() {
+            ASSERT_OK( _helper->createCollection( _ns ) );
+
+            string ident = _helper->getCollectionIdent( _ns );
+            ASSERT( ident[0] != '\0' );
+
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_EQUALS( ident, _helper->getCollectionIdent( _ns ) );
+            }
+        }
+    private:
+        string _ns;
+        int _iterations;
+    };
+
+    // Create many collections and verify that none of them have the same identifier.
+    class UniqueCollectionIdentJob : public KVBackgroundJob {
+    public:
+        UniqueCollectionIdentJob( KVEngineHelper* helper,
+                                  string ns,
+                                  int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _ns( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "UniqueCollectionIdentJob"; }
+        virtual void testRun() {
+            set<string> idents;
+
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_OK( _helper->createCollection( _ns ) );
+
+                string ident = _helper->getCollectionIdent( _ns );
+                ASSERT( idents.insert( ident ).second );
+
+                ASSERT_OK( _helper->dropCollection( _ns ) );
+            }
+        }
+    private:
+        string _ns;
+        int _iterations;
+    };
+
+    // Create a collection and verify that it keeps its identifier, even upon rename.
+    class RenameCollectionIdentJob : public KVBackgroundJob {
+    public:
+        RenameCollectionIdentJob( KVEngineHelper* helper,
+                                  string ns,
+                                  int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _nsPrefix( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "RenameCollectionIdentJob"; }
+        virtual void testRun() {
+            int i = 1;
+            string toNS;
+            string fromNS;
+
+            {
+                stringstream ss;
+                ss << _nsPrefix << (i - 1);
+                toNS = ss.str();
+            }
+
+            ASSERT_OK( _helper->createCollection( toNS ) );
+            string ident = _helper->getCollectionIdent( toNS );
+
+            for ( ; i < _iterations; ++i ) {
+                fromNS = toNS;
+
+                stringstream ss;
+                ss << _nsPrefix << i;
+                toNS = ss.str();
+
+                ASSERT_OK( _helper->renameCollection( fromNS, toNS ) );
+                ASSERT_EQUALS( ident, _helper->getCollectionIdent( toNS ) );
+            }
+        }
+    private:
+        string _nsPrefix;
+        int _iterations;
     };
 
     class IndexIdentNonexistentCollectionJob : public KVBackgroundJob {
@@ -297,7 +450,7 @@ namespace {
             ASSERT_OK( _helper->createCollection( _ns ) );
 
             for (int i=0; i<_iterations; ++i) {
-                for (int j=0; j<indexNames.size(); ++j) {
+                for (size_t j=0; j<indexNames.size(); ++j) {
                     ASSERT_OK( _helper->createIndex( _ns, indexNames[j] ) );
                 }
 
@@ -305,13 +458,12 @@ namespace {
                 std::sort( indexes.begin(), indexes.end() );
                 ASSERT( indexes == indexNamesSorted );
 
-                for (int j=0; j<indexNames.size(); ++j) {
+                for (size_t j=0; j<indexNames.size(); ++j) {
                     ASSERT_OK( _helper->dropIndex( _ns, indexNames[j] ) );
                 }
             }
         }
     };
-
 
     TEST_F( KVEngineTest, HelloWorld ) {
         scoped_ptr<KVEngineHelper> helper( getKVEngineHelper() );
@@ -324,6 +476,28 @@ namespace {
 
         createDropJob.wait();
         listCollectionsJob.wait();
+    }
+
+    TEST_F( KVEngineTest, Collections ) {
+        scoped_ptr<KVEngineHelper> helper( getKVEngineHelper() );
+
+        CreateCollectionJob createCollectionJob( helper.get(), "test.cc" );
+        CreateSameCollectionJob createSameCollectionJob( helper.get(), "test.csc" );
+        GetCollectionIdentJob getCollectionIdentJob( helper.get(), "test.gci" );
+        UniqueCollectionIdentJob uniqueCollectionIdentJob( helper.get(), "test.uci" );
+        RenameCollectionIdentJob renameCollectionIdentJob( helper.get(), "test.rci" );
+
+        createCollectionJob.go();
+        createSameCollectionJob.go();
+        getCollectionIdentJob.go();
+        uniqueCollectionIdentJob.go();
+        renameCollectionIdentJob.go();
+
+        createCollectionJob.wait();
+        createSameCollectionJob.wait();
+        getCollectionIdentJob.wait();
+        uniqueCollectionIdentJob.wait();
+        renameCollectionIdentJob.wait();
     }
 
     TEST_F( KVEngineTest, Indexes ) {
