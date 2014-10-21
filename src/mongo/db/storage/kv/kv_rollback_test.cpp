@@ -37,6 +37,7 @@
 
 #include "mongo/db/operation_context_noop.h"
 #include "mongo/db/index/index_descriptor.h"
+#include "mongo/db/namespace_string.h"
 #include "mongo/db/storage/kv/kv_catalog.h"
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/kv/kv_engine_test_fixture.h"
@@ -295,6 +296,64 @@ namespace {
         int _iterations;
     };
 
+    // Create a collection and verify that it keeps its identifier, even upon rename
+    // to its same namespace.
+    class RenameCollectionToSelfJob : public KVBackgroundJob {
+    public:
+        RenameCollectionToSelfJob( KVEngineHelper* helper,
+                                   string ns,
+                                   int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _ns( ns ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "RenameCollectionToSelfJob"; }
+        virtual void testRun() {
+            ASSERT_OK( _helper->createCollection( _ns ) );
+            string ident = _helper->getCollectionIdent( _ns );
+
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_OK( _helper->renameCollection( _ns, _ns ) );
+                ASSERT_EQUALS( ident, _helper->getCollectionIdent( _ns ) );
+            }
+        }
+    private:
+        string _ns;
+        int _iterations;
+    };
+
+    // Create a collection and verify that it keeps its identifier, even upon rename
+    // to namespace of another database.
+    class RenameCollectionDBJob : public KVBackgroundJob {
+    public:
+        RenameCollectionDBJob( KVEngineHelper* helper,
+                               string fromNS, string toNS,
+                               int iterations = 10000 )
+            : KVBackgroundJob( helper ),
+              _fromNS( fromNS ), _toNS( toNS ),
+              _iterations( iterations ) { }
+        virtual string name() const { return "RenameCollectionDBJob"; }
+        virtual void testRun() {
+            ASSERT_NOT_EQUALS( NamespaceString( _fromNS ).db(), NamespaceString( _toNS ).db() );
+
+            ASSERT_OK( _helper->createCollection( _fromNS ) );
+            string ident = _helper->getCollectionIdent( _fromNS );
+
+            for ( int i = 0; i < _iterations; ++i ) {
+                ASSERT_OK( _helper->renameCollection( _fromNS, _toNS ) );
+                ASSERT_EQUALS( ident, _helper->getCollectionIdent( _toNS ) );
+
+                // Swap to/from namespaces
+                string temp = _fromNS;
+                _fromNS = _toNS;
+                _toNS = temp;
+            }
+        }
+    private:
+        string _fromNS;
+        string _toNS;
+        int _iterations;
+    };
+
     class IndexIdentNonexistentCollectionJob : public KVBackgroundJob {
     private:
         int _iterations;
@@ -486,24 +545,32 @@ namespace {
         GetCollectionIdentJob getCollectionIdentJob( helper.get(), "test.gci" );
         UniqueCollectionIdentJob uniqueCollectionIdentJob( helper.get(), "test.uci" );
         RenameCollectionIdentJob renameCollectionIdentJob( helper.get(), "test.rci" );
+        RenameCollectionToSelfJob renameCollectionToSelf( helper.get(), "test.rcts" );
+        RenameCollectionDBJob renameCollectionDB( helper.get(), "test1.rcdb", "test2.rcdb" );
 
         createCollectionJob.go();
         createSameCollectionJob.go();
         getCollectionIdentJob.go();
         uniqueCollectionIdentJob.go();
         renameCollectionIdentJob.go();
+        renameCollectionToSelf.go();
+        renameCollectionDB.go();
 
         createCollectionJob.wait();
         createSameCollectionJob.wait();
         getCollectionIdentJob.wait();
         uniqueCollectionIdentJob.wait();
         renameCollectionIdentJob.wait();
+        renameCollectionToSelf.wait();
+        renameCollectionDB.wait();
 
         createCollectionJob.rethrow();
         createSameCollectionJob.rethrow();
         getCollectionIdentJob.rethrow();
         uniqueCollectionIdentJob.rethrow();
         renameCollectionIdentJob.rethrow();
+        renameCollectionToSelf.rethrow();
+        renameCollectionDB.rethrow();
     }
 
     TEST_F( KVEngineTest, Indexes ) {
