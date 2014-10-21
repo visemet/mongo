@@ -498,6 +498,12 @@ namespace {
         getCollectionIdentJob.wait();
         uniqueCollectionIdentJob.wait();
         renameCollectionIdentJob.wait();
+
+        createCollectionJob.rethrow();
+        createSameCollectionJob.rethrow();
+        getCollectionIdentJob.rethrow();
+        uniqueCollectionIdentJob.rethrow();
+        renameCollectionIdentJob.rethrow();
     }
 
     TEST_F( KVEngineTest, Indexes ) {
