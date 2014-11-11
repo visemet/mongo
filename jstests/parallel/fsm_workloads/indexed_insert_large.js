@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_insert_large.js
  *
@@ -6,12 +8,12 @@
  * value is a string large enough to make the whole index key be 1K, which is
  * the maximum.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
+load('jstests/parallel/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         // "The total size of an index entry, which can include structural overhead depending on the
@@ -29,7 +31,7 @@ var $config = extendWorkload($config, function($config, $super) {
         this.indexedValue = (this.tid + bigstr).slice(0, maxIndexedSize - bsonOverhead);
 
         assertAlways.eq(maxIndexedSize, Object.bsonsize({ '': this.indexedValue }),
-                        "buggy test: the inserted docs won't have the expected index-key size");
+                        'buggy test: the inserted docs will not have the expected index-key size');
     };
 
     return $config;

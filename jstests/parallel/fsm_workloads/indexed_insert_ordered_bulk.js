@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_insert_ordered_bulk.js
  *
@@ -6,12 +8,12 @@
  *
  * Uses an ordered, bulk operation to perform the inserts.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
+load('jstests/parallel/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.insert = function(db, collName) {
+    $config.states.insert = function insert(db, collName) {
         var doc = {};
         doc[this.indexedField] = this.indexedValue;
 
