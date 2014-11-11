@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * findAndModify_inc.js
  *
