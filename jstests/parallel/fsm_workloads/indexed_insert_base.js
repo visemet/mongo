@@ -46,12 +46,12 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: {
-            getIndexSpec: function() {
+            getIndexSpec: function getIndexSpec() {
                 var ixSpec = {};
                 ixSpec[this.indexedField] = 1;
                 return ixSpec;
             },
-            getDoc: function() {
+            getDoc: function getDoc() {
                 var doc = {};
                 doc[this.indexedField] = this.indexedValue;
                 return doc;

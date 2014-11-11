@@ -16,11 +16,11 @@ load('jstests/parallel/fsm_libs/worker_thread.js');
  */
 function extendWorkload($config, callback) {
     assert.eq(2, arguments.length,
-              "extendWorkload must be called with 2 arguments: $config and callback");
+              'extendWorkload must be called with 2 arguments: $config and callback');
     assert.eq('function', typeof callback,
-              "2nd argument to extendWorkload must be a callback");
+              '2nd argument to extendWorkload must be a callback');
     assert.eq(2, callback.length,
-              "2nd argument to extendWorkload must take 2 arguments: $config and $super");
+              '2nd argument to extendWorkload must take 2 arguments: $config and $super');
     var parsedSuperConfig = parseConfig($config);
     var childConfig = Object.extend({}, parsedSuperConfig, true);
     return callback(childConfig, parsedSuperConfig);
@@ -119,7 +119,7 @@ function parseConfig(config) {
     ];
     Object.keys(config).forEach(function(k) {
         assert.gte(allowedKeys.indexOf(k), 0,
-                   "invalid config parameter: " + k + ". valid parameters are: " +
+                   'invalid config parameter: ' + k + '; valid parameters are: ' +
                    tojson(allowedKeys));
     });
 
@@ -134,9 +134,9 @@ function parseConfig(config) {
     assert.gt(Object.keys(config.states).length, 0);
     Object.keys(config.states).forEach(function(k) {
         assert.eq('function', typeof config.states[k],
-                   "config.states." + k + " is not a function");
+                   'config.states.' + k + ' is not a function');
         assert.eq(2, config.states[k].length,
-                  "state functions should accept 2 parameters: db and collName");
+                  'state functions should accept 2 parameters: db and collName');
     });
 
     // assert all states mentioned in config.transitions are present in config.states
@@ -144,15 +144,15 @@ function parseConfig(config) {
     assert.gt(Object.keys(config.transitions).length, 0);
     Object.keys(config.transitions).forEach(function(fromState) {
         assert(config.states.hasOwnProperty(fromState),
-               "config.transitions contains a state not in config.states: " + fromState);
+               'config.transitions contains a state not in config.states: ' + fromState);
 
         assert.gt(Object.keys(config.transitions[fromState]).length, 0);
         Object.keys(config.transitions[fromState]).forEach(function(toState) {
             assert(config.states.hasOwnProperty(toState),
-                   "config.transitions." + fromState +
-                   " contains a state not in config.states: " + toState);
+                   'config.transitions.' + fromState +
+                   ' contains a state not in config.states: ' + toState);
             assert.eq('number', typeof config.transitions[fromState][toState],
-                      "transitions." + fromState + "." + toState + " should be a number");
+                      'transitions.' + fromState + '.' + toState + ' should be a number');
         });
     });
 
@@ -181,7 +181,7 @@ function setupCluster(clusterOptions, dbName) {
     ];
     Object.keys(clusterOptions).forEach(function(opt) {
         assert(0 <= allowedKeys.indexOf(opt),
-               "invalid option: " + tojson(opt) + ". valid options are: " + tojson(allowedKeys));
+               'invalid option: ' + tojson(opt) + '; valid options are: ' + tojson(allowedKeys));
     });
 
     var verbosityLevel = 1;

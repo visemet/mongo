@@ -29,7 +29,7 @@ var $config = extendWorkload($config, function($config, $super) {
         this.indexedValue = (this.tid + bigstr).slice(0, maxIndexedSize - bsonOverhead);
 
         assertAlways.eq(maxIndexedSize, Object.bsonsize({ '': this.indexedValue }),
-                        "buggy test: the inserted docs won't have the expected index-key size");
+                        'buggy test: the inserted docs will not have the expected index-key size');
     };
 
     return $config;
