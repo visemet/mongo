@@ -373,11 +373,12 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
     jsTest.log(workloads.join('\n'));
     Random.setRandomSeed(clusterOptions.seed);
 
+    var tid = 0;
     workloads.forEach(function(workload) {
         var workloadsToLoad = getWorkloads(workload);
         var config = context[workload].config;
 
-        for (var tid = 0; tid < config.threadCount; ++tid) {
+        for (var i = 0; i < config.threadCount; ++tid, ++i) {
             var args = {
                 tid: tid,
                 latch: latch,
