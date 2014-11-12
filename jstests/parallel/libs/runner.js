@@ -302,6 +302,11 @@ function prepareCollections(workloads, context, cluster, clusterOptions) {
     });
 }
 
+/* This is the function that all other *run*Workload* functions delegate to.
+ * It takes an array of workload filenames and runs them all in parallel.
+ *
+ * TODO: document the other two parameters
+ */
 function _runAllWorkloads(workloads, context, clusterOptions) {
     clusterOptions = Object.extend({}, clusterOptions, true); // defensive deep copy
     var cluster = setupCluster(clusterOptions, 'fakedb');
@@ -360,11 +365,32 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
         getWorkloads = function(workload) { return [workload]; };
     }
 
-    // TODO: do we want to impose a limit on the number of total threads?
-    var numThreads = workloads.reduce(function(count, workload) {
-        var config = context[workload].config;
-        return count + config.threadCount;
-    }, 0);
+    // TODO: pick a better cap for maximum allowed threads
+    var maxAllowedThreads = 100;
+    function sumRequestedThreads() {
+        function wlThreadCount(wl) { return context[wl].config.threadCount; }
+        function plus(x, y) { return x + y; }
+        return workloads.map(wlThreadCount).reduce(plus, 0);
+    }
+    var requestedNumThreads = sumRequestedThreads();
+    if (requestedNumThreads > maxAllowedThreads) {
+        print('\n\ntoo many threads requested: ' + requestedNumThreads + '\n' + tojson(
+            workloads.map(function(wl){return context[wl].config.threadCount;})
+        ));
+        // scale down each workload's requested threadCount so the sum fits within maxAllowedThreads
+        workloads.forEach(function(wl) {
+            // use Math.floor to convert to an integer and prevent the sum from exceeding
+            // maxAllowedThreads
+            context[wl].config.threadCount = Math.floor(
+                (context[wl].config.threadCount * maxAllowedThreads) / requestedNumThreads
+            );
+        });
+    }
+    var numThreads = sumRequestedThreads();
+    print('\n\nusing num threads: ' + numThreads + '\n' + tojson(
+        workloads.map(function(wl){return context[wl].config.threadCount;})
+    ));
+    assert.lte(numThreads, maxAllowedThreads);
 
     var latch = new CountDownLatch(numThreads);
 
