@@ -474,7 +474,10 @@ function throwError(workerErrs) {
         var err = new Error(prepareMsg(stackTraces) + '\n');
 
         // Avoid having any stack traces omitted from the logs
-        var maxLogLine = 10 * 1024;
+        var maxLogLine = 10 * 1024; // 10KB
+
+        // Check if the combined length of the error message and the stack traces
+        // exceeds the maximum line-length the shell will log
         if (err.stack.length >= maxLogLine) {
             print(err.stack);
             throw new Error('stack traces would have been snipped, see logs');
