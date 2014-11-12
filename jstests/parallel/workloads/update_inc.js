@@ -20,9 +20,11 @@ var $config = (function() {
             var res = db[collName].update({}, updateDoc);
             assertAlways.eq(0, res.nUpserted, tojson(res));
             assertWhenOwnColl.eq(1, res.nMatched, tojson(res));
-            if (db.getMongo().writeMode() === "commands") {
+
+            if (db.getMongo().writeMode() === 'commands') {
                 assertWhenOwnColl.eq(1, res.nModified, tojson(res));
             }
+
             ++this.count;
         },
 
