@@ -366,10 +366,9 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
     }
 
     function sumRequestedThreads() {
-        var threadCounts = workloads.map(function(wl) {
+        return Array.sum(workloads.map(function(wl) {
             return context[wl].config.threadCount;
-        });
-        return threadCounts.reduce(function(x, y) { return x + y; }, 0);
+        }));
     }
 
     // TODO: pick a better cap for maximum allowed threads?
