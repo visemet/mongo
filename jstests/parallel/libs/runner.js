@@ -174,6 +174,8 @@ function setupCluster(clusterOptions, dbName) {
     var allowedKeys = [
         'masterSlave',
         'replication',
+        'sameCollection',
+        'sameDB',
         'sharded'
     ];
     Object.keys(clusterOptions).forEach(function(opt) {
