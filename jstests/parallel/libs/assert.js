@@ -32,7 +32,7 @@ var AssertLevel = (function() {
         OWN_COLL: new AssertLevel(1),
         OWN_DB: new AssertLevel(2),
         isAssertLevel: isAssertLevel
-    }
+    };
 
 })();
 

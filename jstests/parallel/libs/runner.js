@@ -457,7 +457,7 @@ function throwError(workerErrs) {
 
         return unique.map(function(value, i) {
             return { value: value, freq: freqs[i] };
-        })
+        });
     }
 
     // Indents a multiline string with the specified number of spaces.
@@ -477,12 +477,12 @@ function throwError(workerErrs) {
 
         // Special case message when threads all have the same trace
         if (numUniqueTraces === 1) {
-            return pluralize('thread', stackTraces.length) + ' threw\n\n'
-                   + indent(uniqueTraces[0].value, 8);
+            return pluralize('thread', stackTraces.length) + ' threw\n\n' +
+                   indent(uniqueTraces[0].value, 8);
         }
 
-        var summary = pluralize('thread', stackTraces.length) + ' threw '
-                      + numUniqueTraces + ' different exceptions:\n\n';
+        var summary = pluralize('thread', stackTraces.length) + ' threw ' +
+                      numUniqueTraces + ' different exceptions:\n\n';
 
         return summary + uniqueTraces.map(function(obj) {
             var line = pluralize('thread', obj.freq) + ' threw\n';
@@ -520,7 +520,7 @@ workerThread.pfsm = function(workloads, args) {
         assert.eq(1, workloads.length);
         pfsm.run(configs[workloads[0]]);
     });
-}
+};
 
 workerThread.composed = function(workloads, args) {
     load('jstests/parallel/libs/worker_thread.js'); // for workerThread.main
@@ -530,4 +530,4 @@ workerThread.composed = function(workloads, args) {
         // TODO: make mixing probability configurable
         composer.run(workloads, configs, 0.1);
     });
-}
+};

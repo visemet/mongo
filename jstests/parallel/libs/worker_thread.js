@@ -44,7 +44,7 @@ var workerThread = (function() {
                         transitions: config.transitions,
                         iterations: config.iterations
                     };
-                })
+                });
             } finally {
                 args.latch.countDown();
             }

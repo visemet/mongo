@@ -24,7 +24,7 @@ var $config = (function() {
             assertWhenOwnColl.eq(count, this.nInserted);
 
             // index scan
-            var count = db[collName].find(this.getDoc()).sort(this.getIndexSpec()).count();
+            count = db[collName].find(this.getDoc()).sort(this.getIndexSpec()).count();
             assertWhenOwnColl.eq(count, this.nInserted);
         }
     };
