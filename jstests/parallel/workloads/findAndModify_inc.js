@@ -29,8 +29,10 @@ var $config = (function() {
         find: function find(db, collName) {
             var docs = db[collName].find().toArray();
             assertWhenOwnColl.eq(1, docs.length);
-            var doc = docs[0];
-            assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
+            assertWhenOwnColl((function() {
+                var doc = docs[0];
+                assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
+            }).bind(this));
         }
 
     };

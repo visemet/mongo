@@ -67,6 +67,17 @@ var assertWithLevel = function(level) {
     }
 
     var assertWithLevel = function() {
+        if (arguments.length === 1 && typeof arguments[0] === 'function') {
+            // Assert against the value returned by the function
+            arguments[0] = arguments[0]();
+
+            // If a function does not explictly return a value,
+            // then have it implicitly return true
+            if (typeof arguments[0] === 'undefined') {
+                arguments[0] = true;
+            }
+        }
+
         wrapAssertFn(level, assert, arguments);
     };
 
