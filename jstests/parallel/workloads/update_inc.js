@@ -7,6 +7,12 @@
  */
 var $config = (function() {
 
+    var data = {
+        // uses the workload name as _id on the document.
+        // assumes this name will be unique.
+        id: 'update_inc'
+    };
+
     var states = {
         init: function init(db, collName) {
             this.fieldName = 't' + this.tid;
@@ -17,7 +23,7 @@ var $config = (function() {
             var updateDoc = { $inc: {} };
             updateDoc.$inc[this.fieldName] = 1;
 
-            var res = db[collName].update({}, updateDoc);
+            var res = db[collName].update({ _id: this.id }, updateDoc);
             assertAlways.eq(0, res.nUpserted, tojson(res));
             assertWhenOwnColl.eq(1, res.nMatched, tojson(res));
 
@@ -45,12 +51,13 @@ var $config = (function() {
     };
 
     function setup(db, collName) {
-        db[collName].insert({});
+        db[collName].insert({ _id: this.id });
     }
 
     return {
         threadCount: 30,
         iterations: 100,
+        data: data,
         states: states,
         transitions: transitions,
         setup: setup
