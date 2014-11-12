@@ -470,7 +470,16 @@ function throwError(workerErrs) {
             return e.stack || e.err;
         });
 
-        throw new Error(prepareMsg(stackTraces) + '\n');
+        var err = new Error(prepareMsg(stackTraces) + '\n');
+
+        // Avoid having any stack traces omitted from the logs
+        var maxLogLine = 10 * 1024;
+        if (err.stack.length >= maxLogLine) {
+            print(err.stack);
+            throw new Error('stack traces would have been snipped, see logs');
+        }
+
+        throw err;
     }
 }
 
