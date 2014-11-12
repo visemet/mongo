@@ -378,9 +378,9 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
         var workloadsToLoad = getWorkloads(workload);
         var config = context[workload].config;
 
-        for (var i = 0; i < config.threadCount; ++tid, ++i) {
+        for (var i = 0; i < config.threadCount; ++i) {
             var args = {
-                tid: tid,
+                tid: tid++,
                 latch: latch,
                 dbName: context[workload].dbName,
                 collName: context[workload].collName,
