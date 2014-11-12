@@ -18,9 +18,9 @@ var $config = (function() {
             updateDoc.$inc[this.fieldName] = 1;
 
             var res = db[collName].update({}, updateDoc);
+            assertAlways.eq(0, res.nUpserted, tojson(res));
+            assertWhenOwnColl.eq(1, res.nMatched, tojson(res));
             if (db.getMongo().writeMode() === "commands") {
-                assertAlways.eq(0, res.nUpserted, tojson(res));
-                assertWhenOwnColl.eq(1, res.nMatched, tojson(res));
                 assertWhenOwnColl.eq(1, res.nModified, tojson(res));
             }
             ++this.count;
