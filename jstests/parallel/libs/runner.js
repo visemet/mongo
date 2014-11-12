@@ -176,6 +176,7 @@ function setupCluster(clusterOptions, dbName) {
         'replication',
         'sameCollection',
         'sameDB',
+        'seed',
         'sharded'
     ];
     Object.keys(clusterOptions).forEach(function(opt) {
