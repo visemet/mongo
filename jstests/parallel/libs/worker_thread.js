@@ -11,7 +11,7 @@ var workerThread = (function() {
     // run = callback that takes a map of workloads to their associated $config
     function main(workloads, args, run) {
         var myDB;
-        var config;
+        var configs = {};
 
         if (args.clusterOptions.addr) {
             myDB = new Mongo(args.clusterOptions.addr).getDB(args.dbName);
@@ -25,15 +25,13 @@ var workerThread = (function() {
 
         // Converts any exceptions to a return status
         try {
-            var configs = {};
-
             // Ensure that 'args.latch.countDown' gets called so that the parent thread
             // is not blocked when it tries to join the worker threads
             try {
                 load('jstests/parallel/libs/runner.js'); // for parseConfig
                 workloads.forEach(function(workload) {
                     load(workload);
-                    config = parseConfig($config); // to normalize
+                    var config = parseConfig($config); // to normalize
                     config.data.tid = args.tid;
                     configs[workload] = {
                         data: config.data,
@@ -55,6 +53,11 @@ var workerThread = (function() {
             return { ok: 1 };
         } catch(e) {
             return { ok: 0, err: e.toString(), stack: e.stack };
+        } finally {
+            // Avoid retention of connection object
+            configs = null;
+            myDB = null;
+            gc();
         }
     }
 

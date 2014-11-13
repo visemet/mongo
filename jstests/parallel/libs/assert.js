@@ -52,21 +52,23 @@ var assertWithLevel = function(level) {
         throw new Error(msg);
     }
 
-    function wrapAssertFn(level, fn, args) {
-        // Only execute assertion if level for which it was defined is
-        // an (improper) subset of the global assertion level
-        if (level.compareTo(globalAssertLevel) <= 0) {
-            var doassertSaved = doassert;
-            try {
-                doassert = quietlyDoAssert;
-                fn.apply(assert, args); // functions typically get called on 'assert'
-            } finally {
-                doassert = doassertSaved;
-            }
+    function wrapAssertFn(fn, args) {
+        var doassertSaved = doassert;
+        try {
+            doassert = quietlyDoAssert;
+            fn.apply(assert, args); // functions typically get called on 'assert'
+        } finally {
+            doassert = doassertSaved;
         }
     }
 
     var assertWithLevel = function() {
+        // Only execute assertion if level for which it was defined is
+        // an (improper) subset of the global assertion level
+        if (level.compareTo(globalAssertLevel) > 0) {
+            return;
+        }
+
         if (arguments.length === 1 && typeof arguments[0] === 'function') {
             // Assert against the value returned by the function
             arguments[0] = arguments[0]();
@@ -78,7 +80,7 @@ var assertWithLevel = function(level) {
             }
         }
 
-        wrapAssertFn(level, assert, arguments);
+        wrapAssertFn(assert, arguments);
     };
 
     Object.keys(assert).forEach(function(fn) {
@@ -87,7 +89,13 @@ var assertWithLevel = function(level) {
         }
 
         assertWithLevel[fn] = function() {
-            wrapAssertFn(level, assert[fn], arguments);
+            // Only execute assertion if level for which it was defined is
+            // an (improper) subset of the global assertion level
+            if (level.compareTo(globalAssertLevel) > 0) {
+                return;
+            }
+
+            wrapAssertFn(assert[fn], arguments);
         };
     });
 
