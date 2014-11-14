@@ -377,7 +377,7 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
     }
 
     // TODO: pick a better cap for maximum allowed threads?
-    var maxAllowedThreads = 500;
+    var maxAllowedThreads = 100;
     var requestedNumThreads = sumRequestedThreads();
     if (requestedNumThreads > maxAllowedThreads) {
         print('\n\ntoo many threads requested: ' + requestedNumThreads);
