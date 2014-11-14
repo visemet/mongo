@@ -12,22 +12,22 @@ var workerThread = (function() {
     function main(workloads, args, run) {
         var myDB;
         var configs = {};
-
-        if (args.clusterOptions.addr) {
-            myDB = new Mongo(args.clusterOptions.addr).getDB(args.dbName);
-        } else {
-            myDB = db.getSiblingDB(args.dbName);
-        }
-
-        // TODO: do we want to explicitly load() assert.js?
-        //       it is currently being loaded as a side-effect of loading runner.js
-        globalAssertLevel = args.globalAssertLevel;
-
         // Converts any exceptions to a return status
         try {
             // Ensure that 'args.latch.countDown' gets called so that the parent thread
             // is not blocked when it tries to join the worker threads
             try {
+
+                if (args.clusterOptions.addr) {
+                    myDB = new Mongo(args.clusterOptions.addr).getDB(args.dbName);
+                } else {
+                    myDB = db.getSiblingDB(args.dbName);
+                }
+
+                // TODO: do we want to explicitly load() assert.js?
+                //       it is currently being loaded as a side-effect of loading runner.js
+                globalAssertLevel = args.globalAssertLevel;
+
                 load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
                 workloads.forEach(function(workload) {
                     load(workload);
