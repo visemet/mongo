@@ -21,11 +21,13 @@ var $config = (function() {
         return updateDoc;
     }
 
-    function assertResult(res) {
+    function assertResult(res, numDocs) {
         if (db.getMongo().writeMode() === "commands") {
             assertAlways.eq(0, res.nUpserted, tojson(res));
-            assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
-            assertWhenOwnColl(res.nModified === 0 || res.nModified === 1, tojson(res));
+            assertWhenOwnColl.eq(numDocs, res.nMatched,  tojson(res));
+            // nModified can be as low as 0, if all the docs happened to be unchanged by the update
+            assertWhenOwnColl.lte(0, res.nModified, tojson(res));
+            assertWhenOwnColl.gte(numDocs, res.nModified, tojson(res));
         }
     }
 
@@ -38,8 +40,8 @@ var $config = (function() {
             var updateDoc = chooseUpdate.call(this, whichDoc);
 
             // apply the update
-            var res = db[collName].update({ n: whichDoc }, updateDoc, { multi: true });
-            assertResult(res);
+            var res = db[collName].update({}, updateDoc, { multi: true });
+            assertResult(res, this.numDocs);
         }
     };
 
