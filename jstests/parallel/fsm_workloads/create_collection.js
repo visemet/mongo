@@ -41,12 +41,27 @@ var $config = (function() {
         create: { create: 1 }
     };
 
+    var teardown = function(db, collName) {
+        var res = db.runCommand('listCollections');
+        assertAlways.commandWorked(res);
+
+        var prefix = this.prefix;
+        res.collections.forEach(function(collInfo) {
+            if (collInfo.name.indexOf(prefix) !== 0) {
+                return;
+            }
+
+            db[collInfo.name].drop();
+        });
+    }
+
     return {
         threadCount: 5,
         iterations: 20,
         data: data,
         states: states,
-        transitions: transitions
+        transitions: transitions,
+        teardown: teardown
     };
 
 })();
