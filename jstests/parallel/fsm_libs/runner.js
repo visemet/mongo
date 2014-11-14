@@ -184,19 +184,20 @@ function setupCluster(clusterOptions, dbName) {
                "invalid option: " + tojson(opt) + ". valid options are: " + tojson(allowedKeys));
     });
 
+    var verbosityLevel = 2;
     if (clusterOptions.sharded) {
         // TODO: allow 'clusterOptions' to specify the number of shards
         var shardConfig = {
             shards: 2,
             mongos: 1,
-            verbose: 2
+            verbose: verbosityLevel
         };
 
         // TODO: allow 'clusterOptions' to specify an 'rs' config
         if (clusterOptions.replication) {
             shardConfig.rs = {
                 nodes: 3,
-                nodeOptions: { verbose: 2 }
+                nodeOptions: { verbose: verbosityLevel }
             };
         }
 
@@ -216,7 +217,7 @@ function setupCluster(clusterOptions, dbName) {
         // TODO: allow 'clusterOptions' to specify the number of nodes
         var replSetConfig = {
             nodes: 3,
-            nodeOptions: { verbose: 2 }
+            nodeOptions: { verbose: verbosityLevel }
         };
 
         var rst = new ReplSetTest(replSetConfig);
@@ -237,7 +238,10 @@ function setupCluster(clusterOptions, dbName) {
         var rt = new ReplTest('replTest');
 
         var master = rt.start(true);
-        rt.start(false); // start slave
+        var slave = rt.start(false);
+
+        master.adminCommand({ setParameter: 1, logLevel: verbosityLevel });
+        slave.adminCommand({ setParameter: 1, logLevel: verbosityLevel });
 
         clusterOptions.addr = master.host;
         cluster.db = master.getDB(dbName);
@@ -246,6 +250,7 @@ function setupCluster(clusterOptions, dbName) {
         };
     } else { // standalone server
         cluster.db = db.getSiblingDB(dbName);
+        cluster.db.adminCommand({ setParameter: 1, logLevel: verbosityLevel });
         cluster.teardown = function() {};
     }
 
