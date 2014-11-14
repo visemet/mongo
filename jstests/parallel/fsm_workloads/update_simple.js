@@ -9,45 +9,42 @@
  */
 var $config = (function() {
 
+    function assertResult(res) {
+        if (db.getMongo().writeMode() === "commands") {
+            assertAlways.eq(0, res.nUpserted, tojson(res));
+            assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
+            assertWhenOwnColl(res.nModified === 0 || res.nModified === 1, tojson(res));
+        }
+    }
+
     var states = {
-        update: function update(db, collName) {
+        set: function set(db, collName) {
             // choose a doc and value to use in the update
-            var whichDoc = Math.floor(Random.rand() * this.numDocs);
-            var value = Math.floor(Random.rand() * 5);
+            var whichDoc = Random.randInt(this.numDocs);
+            var value = Random.randInt(5);
 
-            // choose whether to $set or $unset the field
-            var set = Random.rand() > 0.5;
-            var updateDoc = {};
-            updateDoc[set ? '$set' : '$unset'] = { value: value };
+            var res = db[collName].update({ n: whichDoc }, { '$set': { value: value } });
+            assertResult(res);
+        },
+        unset: function unset(db, collName) {
+            // choose a doc and value to use in the update
+            var whichDoc = Random.randInt(this.numDocs);
+            var value = Random.randInt(5);
 
-            var res = db[collName].update({ n: whichDoc }, updateDoc);
-            if (db.getMongo().writeMode() === "commands") {
-                assertAlways.eq(0, res.nUpserted, tojson(res));
-                assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
-                assertWhenOwnColl(res.nModified === 0 || res.nModified === 1, tojson(res));
-            }
-
-            // find the doc
-            var doc = db[collName].findOne({ n: whichDoc });
-            if (set) {
-                assertWhenOwnColl.contains('value', Object.keys(doc),
-                                           "doc.value not present after $set");
-                assertWhenOwnColl.eq(value, doc.value,
-                                     "doc.value has wrong value after $set: " + tojson(doc));
-            } else { // unset
-                assertWhenOwnColl.eq(undefined, doc.value,
-                                     "doc.value present after $unset: " + tojson(doc));
-            }
-            // make sure doc is present by (what is hopefully) an index lookup
-            var indexedDocs = db[collName].find({ value: value }).toArray().filter(function(d) {
-                return d._id.equals(doc._id);
-            });
-            assertWhenOwnColl.eq(1, indexedDocs);
+            var res = db[collName].update({ n: whichDoc }, { '$unset': { value: value } });
+            assertResult(res);
         }
     };
 
     var transitions = {
-        update: { update: 1 }
+        set: {
+            set: 0.5,
+            unset: 0.5
+        },
+        unset: {
+            set: 0.5,
+            unset: 0.5
+        }
     };
 
     function setup(db, collName) {
@@ -60,8 +57,8 @@ var $config = (function() {
 
     return {
         threadCount: 50,
-        iterations: 500,
-        startState: 'update',
+        iterations: 100,
+        startState: 'set',
         states: states,
         transitions: transitions,
         data: {
