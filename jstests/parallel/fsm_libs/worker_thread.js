@@ -12,10 +12,10 @@ var workerThread = (function() {
     function main(workloads, args, run) {
         var myDB;
         var configs = {};
-        // Converts any exceptions to a return status
+        // NOTE: Any code that could possibly throw *must* be protected by *both* try blocks.
+        // This ensures that latch.countDown() is called even if an exception is thrown.
+        // If latch.countDown() were not called, the parent thread would block forever.
         try {
-            // Ensure that 'args.latch.countDown' gets called so that the parent thread
-            // is not blocked when it tries to join the worker threads
             try {
 
                 if (args.clusterOptions.addr) {
