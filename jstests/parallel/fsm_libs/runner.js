@@ -188,12 +188,16 @@ function setupCluster(clusterOptions, dbName) {
         // TODO: allow 'clusterOptions' to specify the number of shards
         var shardConfig = {
             shards: 2,
-            mongos: 1
+            mongos: 1,
+            verbose: 2
         };
 
         // TODO: allow 'clusterOptions' to specify an 'rs' config
         if (clusterOptions.replication) {
-            shardConfig.rs = true;
+            shardConfig.rs = {
+                nodes: 3,
+                nodeOptions: { verbose: 2 }
+            };
         }
 
         var st = new ShardingTest(shardConfig);
@@ -211,7 +215,8 @@ function setupCluster(clusterOptions, dbName) {
     } else if (clusterOptions.replication) {
         // TODO: allow 'clusterOptions' to specify the number of nodes
         var replSetConfig = {
-            nodes: 3
+            nodes: 3,
+            nodeOptions: { verbose: 2 }
         };
 
         var rst = new ReplSetTest(replSetConfig);
