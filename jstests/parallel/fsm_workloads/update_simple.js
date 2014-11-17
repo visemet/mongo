@@ -10,29 +10,31 @@
 var $config = (function() {
 
     function assertResult(res) {
-        if (db.getMongo().writeMode() === "commands") {
-            assertAlways.eq(0, res.nUpserted, tojson(res));
-            assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
-            assertWhenOwnColl(res.nModified === 0 || res.nModified === 1, tojson(res));
+        assertAlways.eq(0, res.nUpserted, tojson(res));
+        assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
+        if (db.getMongo().writeMode() === 'commands') {
+            assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
         }
+    }
+
+    function setOrUnset(db, collName, set) {
+            // choose a doc and value to use in the update
+            var docIndex = Random.randInt(this.numDocs);
+            var value = Random.randInt(5);
+
+            var updater = {};
+            updater[set ? '$set' : '$unset'] = { value: value };
+
+            var res = db[collName].update({ n: docIndex }, updater);
+            assertResult(res);
     }
 
     var states = {
         set: function set(db, collName) {
-            // choose a doc and value to use in the update
-            var whichDoc = Random.randInt(this.numDocs);
-            var value = Random.randInt(5);
-
-            var res = db[collName].update({ n: whichDoc }, { '$set': { value: value } });
-            assertResult(res);
+            setOrUnset(db, collName, true);
         },
         unset: function unset(db, collName) {
-            // choose a doc and value to use in the update
-            var whichDoc = Random.randInt(this.numDocs);
-            var value = Random.randInt(5);
-
-            var res = db[collName].update({ n: whichDoc }, { '$unset': { value: value } });
-            assertResult(res);
+            setOrUnset(db, collName, false);
         }
     };
 
@@ -55,15 +57,16 @@ var $config = (function() {
         }
     }
 
+    var threadCount = 50;
     return {
-        threadCount: 50,
+        threadCount: threadCount,
         iterations: 100,
         startState: 'set',
         states: states,
         transitions: transitions,
         data: {
             // numDocs should be much less than threadCount, to make more threads use the same docs
-            numDocs: 10
+            numDocs: Math.floor(threadCount / 10)
         },
         setup: setup
     };

@@ -1,75 +1,24 @@
 /* update_multifield_multiupdate.js
  *
- * Does updates that affect multiple fields on a single document.
+ * Does updates that affect multiple fields on multiple documents.
  * The collection has an index for each field, and a multikey index for all fields.
  *
  */
-var $config = (function() {
+load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
+load('jstests/parallel/fsm_workloads/update_multifield.js'); // for $config
 
-    // returns an update doc
-    function chooseUpdate(whichDoc) {
-        var xvalue = Random.randInt(5);
-        var yvalue = Random.randInt(5);
-        var zvalue = Random.randInt(5);
-        var set = Random.rand() > 0.5;
-        var push = Random.rand() > 0.2;
-        var updateDoc = {};
-        updateDoc[set ? '$set' : '$unset'] = { x: xvalue };
-        updateDoc[push ? '$push' : '$pull'] = { y: yvalue };
-        updateDoc.$inc = { z: zvalue };
+var $config = extendWorkload($config, function($config, $super) {
 
-        return updateDoc;
-    }
+    $config.data.multi = true;
 
-    function assertResult(res, numDocs) {
-        if (db.getMongo().writeMode() === "commands") {
-            assertAlways.eq(0, res.nUpserted, tojson(res));
-            assertWhenOwnColl.eq(numDocs, res.nMatched,  tojson(res));
-            // nModified can be as low as 0, if all the docs happened to be unchanged by the update
-            assertWhenOwnColl.lte(0, res.nModified, tojson(res));
-            assertWhenOwnColl.gte(numDocs, res.nModified, tojson(res));
-        }
-    }
-
-    var states = {
-        update: function update(db, collName) {
-            // choose a doc to update
-            var whichDoc = Random.randInt(this.numDocs);
-
-            // choose an update to apply
-            var updateDoc = chooseUpdate.call(this, whichDoc);
-
-            // apply the update
-            var res = db[collName].update({}, updateDoc, { multi: true });
-            assertResult(res, this.numDocs);
+    $config.data.assertResult = function(res) {
+        assertAlways.eq(0, res.nUpserted, tojson(res));
+        // lte because documents can move in the middle of an update
+        assertWhenOwnColl.lte(this.numDocs, res.nMatched,  tojson(res));
+        if (db.getMongo().writeMode() === 'commands') {
+            assertWhenOwnColl.lte(this.numDocs, res.nModified, tojson(res));
         }
     };
 
-    var transitions = {
-        update: { update: 1 }
-    };
-
-    function setup(db, collName) {
-        db[collName].ensureIndex({ x: 1 });
-        db[collName].ensureIndex({ y: 1 });
-        db[collName].ensureIndex({ z: 1 });
-        db[collName].ensureIndex({ x: 1, y: 1, z: 1 });
-        for (var i = 0; i < this.numDocs; ++i) {
-            db[collName].insert({ n: i });
-        }
-    }
-
-    return {
-        threadCount: 50,
-        iterations: 100,
-        startState: 'update',
-        states: states,
-        transitions: transitions,
-        data: {
-            // numDocs should be much less than threadCount, to make more threads use the same docs
-            numDocs: 10
-        },
-        setup: setup
-    };
-
-})();
+    return $config;
+});

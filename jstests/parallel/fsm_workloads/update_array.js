@@ -5,64 +5,66 @@
  */
 var $config = (function() {
 
-    function assertResult(res) {
-        if (db.getMongo().writeMode() === "commands") {
+    var states = (function() {
+        // res: WriteResult
+        // nModifiedPossibilities: array of allowed values for res.nModified
+        function assertUpdateSuccess(res, nModifiedPossibilities) {
             assertAlways.eq(0, res.nUpserted, tojson(res));
             assertWhenOwnColl.eq(1, res.nMatched,  tojson(res));
-            assertWhenOwnColl(res.nModified === 0 || res.nModified === 1, tojson(res));
+            if (db.getMongo().writeMode() === 'commands') {
+                assertWhenOwnColl.contains(res.nModified, nModifiedPossibilities, tojson(res));
+            }
         }
-    }
+        function doPush(db, collName, docIndex, value) {
+            var res = db[collName].update({ n: docIndex }, { $push: { arr: value } });
 
-    function doPush(db, collName, whichDoc, value) {
-        var res = db[collName].update({ n: whichDoc }, { '$push': { arr: value } });
-        assertResult(res);
+            // assert the update reported success
+            assertUpdateSuccess(res, [1]);
 
-        // find the doc and make sure it was updated
-        var doc = db[collName].findOne({ n: whichDoc });
-        assertWhenOwnColl.contains(value, doc.arr,
-                                   "doc.arr doesn't contain value (" + value + ") after $push: " +
-                                   tojson(doc.arr));
-
-        // try to assert doc is in the index
-        var indexedDocs = db[collName].find({ arr: value }).toArray().filter(function(d) {
-            return d._id.equals(doc._id);
-        });
-        assertWhenOwnColl.eq(1, indexedDocs.length);
-    }
-
-    function doPull(db, collName, whichDoc, value) {
-        var res = db[collName].update({ n: whichDoc }, { '$pull': { arr: value } });
-        assertResult(res);
-
-        // find the doc and make sure it was updated
-        var doc = db[collName].findOne({ n: whichDoc });
-        assertWhenOwnColl.eq([], doc.arr.filter(function(v) { return v === value; }),
-                             "doc.arr contains removed value (" + value + ") after $pull: " +
-                             tojson(doc.arr));
-
-        // try to assert doc is not in the index
-        var indexedDocs = db[collName].find({ arr: value }).toArray().filter(function(d) {
-            return d._id.equals(doc._id);
-        });
-        assertWhenOwnColl.eq(0, indexedDocs.length);
-    }
-
-    var states = {
-        push: function(db, collName) {
-            var whichDoc = Random.randInt(this.numDocs);
-            var value = this.tid;
-
-            doPush(db, collName, whichDoc, value);
-        },
-        pull: function(db, collName) {
-            var whichDoc = Random.randInt(this.numDocs);
-            var value = this.tid;
-
-            doPull(db, collName, whichDoc, value);
+            // find the doc and make sure it was updated
+            var doc = db[collName].findOne({ n: docIndex });
+            assertWhenOwnColl.contains(value, doc.arr,
+                                       'doc.arr doesni\'t contain value (' + value + ') after $push: ' +
+                                       tojson(doc.arr));
         }
-    };
+
+        function doPull(db, collName, docIndex, value) {
+            var res = db[collName].update({ n: docIndex }, { $pull: { arr: value } });
+
+            // assert the update reported success
+            assertUpdateSuccess(res, [0, 1]);
+
+            // find the doc and make sure it was updated
+            var doc = db[collName].findOne({ n: docIndex });
+            assertWhenOwnColl.eq(-1, doc.arr.indexOf(value),
+                                 'doc.arr contains removed value (' + value + ') after $pull: ' +
+                                 tojson(doc.arr));
+        }
+
+        return {
+            init: function(db, collName) {
+                // noop
+            },
+            push: function(db, collName) {
+                var docIndex = Random.randInt(this.numDocs);
+                var value = this.tid;
+
+                doPush(db, collName, docIndex, value);
+            },
+            pull: function(db, collName) {
+                var docIndex = Random.randInt(this.numDocs);
+                var value = this.tid;
+
+                doPull(db, collName, docIndex, value);
+            }
+        };
+    })();
 
     var transitions = {
+        init: {
+            push: 0.8,
+            pull: 0.2
+        },
         push: {
             push: 0.8,
             pull: 0.2
@@ -84,7 +86,6 @@ var $config = (function() {
     return {
         threadCount: 50,
         iterations: 100,
-        startState: 'push',
         states: states,
         transitions: transitions,
         data: {
