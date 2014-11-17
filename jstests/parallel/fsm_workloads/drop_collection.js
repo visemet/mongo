@@ -1,4 +1,3 @@
-
 /**
  * drop_collection.js
  *
@@ -7,8 +6,8 @@
 var $config = (function() {
 
     var data = {
-        // Use the workload name as prefix for the collection name,
-        // which is assumed to be unique.
+        // Use the workload name as a prefix for the collection name,
+        // since the workload name is assumed to be unique.
         prefix: 'drop_collection'
     };
 
@@ -24,9 +23,9 @@ var $config = (function() {
 
         function createAndDrop(db, collName) {
             // TODO: should we ever do something different?
-            collName = uniqueCollectionName(this.prefix, this.tid, this.num++);
-            assertAlways.commandWorked(db.createCollection(collName));
-            assertAlways(db[collName].drop());
+            var myCollName = uniqueCollectionName(this.prefix, this.tid, this.num++);
+            assertAlways.commandWorked(db.createCollection(myCollName));
+            assertAlways(db[myCollName].drop());
         }
 
         return {

@@ -1,4 +1,3 @@
-
 /**
  * create_collection.js
  *
@@ -7,8 +6,8 @@
 var $config = (function() {
 
     var data = {
-        // Use the workload name as prefix for the collection name,
-        // which is assumed to be unique.
+        // Use the workload name as a prefix for the collection name,
+        // since the workload name is assumed to be unique.
         prefix: 'create_collection'
     };
 
@@ -25,8 +24,8 @@ var $config = (function() {
         // TODO: how to avoid having too many files open?
         function create(db, collName) {
             // TODO: should we ever do something different?
-            collName = uniqueCollectionName(this.prefix, this.tid, this.num++);
-            assertAlways.commandWorked(db.createCollection(collName));
+            var myCollName = uniqueCollectionName(this.prefix, this.tid, this.num++);
+            assertAlways.commandWorked(db.createCollection(myCollName));
         }
 
         return {
@@ -42,15 +41,11 @@ var $config = (function() {
     };
 
     var teardown = function(db, collName) {
-        var res = db.runCommand('listCollections');
+        var pattern = new RegExp('^' + this.prefix);
+        var res = db.runCommand('listCollections', { filter: { name: pattern } });
         assertAlways.commandWorked(res);
 
-        var prefix = this.prefix;
         res.collections.forEach(function(collInfo) {
-            if (collInfo.name.indexOf(prefix) !== 0) {
-                return;
-            }
-
             db[collInfo.name].drop();
         });
     }
