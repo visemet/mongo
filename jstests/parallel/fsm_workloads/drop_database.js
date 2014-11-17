@@ -1,4 +1,3 @@
-
 /**
  * drop_database.js
  *
@@ -32,5 +31,3 @@ var $config = (function() {
     };
 
 })();
-
-
