@@ -13,10 +13,10 @@ var $config = extendWorkload($config, function($config, $super) {
 
     $config.data.assertResult = function(res) {
         assertAlways.eq(0, res.nUpserted, tojson(res));
-        // lte because documents can move in the middle of an update
-        assertWhenOwnColl.lte(this.numDocs, res.nMatched,  tojson(res));
+        // documents can move during an update, causing them to be matched 0 or more than 1 times.
+        assertWhenOwnColl.lte(0, res.nMatched,  tojson(res));
         if (db.getMongo().writeMode() === 'commands') {
-            assertWhenOwnColl.lte(this.numDocs, res.nModified, tojson(res));
+            assertWhenOwnColl.eq(res.nMatched, res.nModified, tojson(res));
         }
     };
 
