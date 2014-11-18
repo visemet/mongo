@@ -12,6 +12,7 @@ var $config = (function() {
 
         createAndDrop: function createAndDrop(db, collName) {
             // TODO: should we ever do something different?
+            //       e.g. create multiple collections on the database and then drop?
             var myDB = db.getSiblingDB(this.uniqueDBName);
             assertAlways.commandWorked(myDB.createCollection(collName));
             assertAlways.commandWorked(myDB.dropDatabase());
