@@ -11,7 +11,7 @@ var $config = (function() {
         },
 
         insert: function insert(db, collName) {
-            var randomText = text[Random.randInt(text.length)];
+            var randomText = this.getRandomText();
             var res = db[collName].insert({ v: randomText });
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
@@ -104,6 +104,9 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: {
+            getRandomText: function() {
+                return this.text[Random.randInt(this.text.length)];
+            },
             text: text
         },
         setup: setup
