@@ -50,7 +50,11 @@ var $config = (function() {
         }
 
         function mapReduce(db, collName) {
-            var options = { finalize: this.finalizer, out: { inline: 1 } };
+            var options = {
+                finalize: this.finalizer,
+                out: { inline: 1 }
+            };
+
             var res = db[collName].mapReduce(this.mapper, this.reducer, options);
             assertAlways.commandWorked(res);
         }
