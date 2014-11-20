@@ -1,9 +1,9 @@
 /**
  * indexed_insert_compound.js
  *
- * Inserts documents into an indexed collection and asserts that the documents appear in both a
- * collection scan and an index scan. The indexed value is a 1-character string based on the thread
- * id.
+ * Inserts documents into an indexed collection and asserts that the documents
+ * appear in both a collection scan and an index scan. The collection is indexed
+ * with a compound index on three integer fields.
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
@@ -25,11 +25,7 @@ var $config = extendWorkload($config, function($config, $super) {
     };
 
     $config.data.getIndexSpec = function() {
-        return {
-            x: 1,
-            y: 1,
-            z: 1
-        };
+        return { x: 1, y: 1, z: 1 };
     };
 
     return $config;

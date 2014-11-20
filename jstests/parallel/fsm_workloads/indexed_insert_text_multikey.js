@@ -15,7 +15,7 @@ var $config = extendWorkload($config, function($config, $super) {
     $config.data.getRandomText = function() {
         var len = Random.randInt(5);
         var textArr = [];
-        for (var i=0; i<len; ++i) {
+        for (var i = 0; i < len; ++i) {
             textArr.push($super.data.getRandomText.call(this, arguments));
         }
         return textArr;

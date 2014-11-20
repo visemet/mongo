@@ -1,9 +1,9 @@
 /**
  * indexed_insert_2d.js
  *
- * Inserts documents into an indexed collection and asserts that the documents appear in both a
- * collection scan and an index scan. The indexed value is a 2-element array of numbers, indexed
- * with a 2d index.
+ * Inserts documents into an indexed collection and asserts that the documents
+ * appear in both a collection scan and an index scan. The indexed value is a
+ * 2-element array of numbers, indexed with a 2d index.
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
@@ -13,16 +13,35 @@ var $config = extendWorkload($config, function($config, $super) {
     $config.states.init = function(db, collName) {
         $super.states.init.apply(this, arguments);
 
-        // assume fewer than 180*180 = 32400 threads, so we can assign each thread to a
-        // point
-        assertAlways.lt(this.tid, 180*180);
-        this.indexedValue = [Math.floor(this.tid / 180), this.tid % 180];
+        assertAlways.lt(this.tid, 256*256); // assume tid is a 16 bit nonnegative int
+        // split the tid into the odd bits and the even bits
+        // for example:
+        //  tid:  57 = 00111001
+        //  even:      0 1 0 1  = 5
+        //  odd:        0 1 1 0 = 6
+        // This lets us turn every tid into a unique pair of numbers within 256.
+        var oddBits = 0;
+        var evenBits = 0;
+        for (var i = 0; i < 16; ++i) {
+            if (this.tid & 1<<i) {
+                if (i % 2 === 0) {
+                    // i is even
+                    evenBits |= 1<<(i / 2);
+                } else {
+                    // i is odd
+                    oddBits |= 1<<(i / 2);
+                }
+            }
+        }
+        assertAlways.lt(oddBits, 256);
+        assertAlways.lt(evenBits, 256);
+        this.indexedValue = [evenBits - 128, oddBits - 128];
     };
 
     $config.data.getIndexSpec = function() {
-        var ix = {};
-        ix[this.indexedField] = '2d';
-        return ix;
+        var ixSpec = {};
+        ixSpec[this.indexedField] = '2d';
+        return ixSpec;
     };
 
     return $config;

@@ -1,7 +1,7 @@
 /**
  * indexed_insert_text.js
  *
- * Inserts some documents with a text index.
+ * Inserts some documents into a collection with a text index.
  */
 var $config = (function() {
 
@@ -11,7 +11,7 @@ var $config = (function() {
         },
 
         insert: function insert(db, collName) {
-            var randomText = this.getRandomText();
+            var randomText = this.getRandomTextSnippet();
             var res = db[collName].insert({ v: randomText });
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
@@ -104,7 +104,7 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: {
-            getRandomText: function() {
+            getRandomTextSnippet: function() {
                 return this.text[Random.randInt(this.text.length)];
             },
             text: text
