@@ -80,13 +80,16 @@ var $config = (function() {
     }
 
     var setup = function(db, collName) {
-        // TODO: do we want to use the bulk API for doing the inserts?
+        var bulk = db[collName].initializeUnorderedBulkOp();
         for (var i = 0; i < this.numDocs; ++i) {
             // TODO: this actually does assume that there are no unique indexes
-            var res = db[collName].insert(makeDoc(this.numDocs / 100, this.numDocs / 10));
-            assertAlways.writeOK(res);
-            assertAlways.eq(1, res.nInserted);
+            var doc = makeDoc(this.numDocs / 100, this.numDocs / 10);
+            bulk.insert(doc);
         }
+
+        var res = bulk.execute();
+        assertAlways.writeOK(res);
+        assertAlways.eq(this.numDocs, res.nInserted);
     }
 
     return {
