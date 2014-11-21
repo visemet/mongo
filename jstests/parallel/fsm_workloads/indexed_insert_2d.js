@@ -35,7 +35,7 @@ var $config = extendWorkload($config, function($config, $super) {
         }
         assertAlways.lt(oddBits, 256);
         assertAlways.lt(evenBits, 256);
-        this.indexedValue = [evenBits - 128, oddBits - 128];
+        this.indexedValue = [(evenBits - 128)/2, (oddBits - 128)/2];
     };
 
     $config.data.getIndexSpec = function() {
