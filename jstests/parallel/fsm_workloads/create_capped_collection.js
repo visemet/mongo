@@ -2,7 +2,7 @@
  * create_capped_collection.js
  *
  * Repeatedly creates a capped collection. Also verifies that truncation
- * occurs based once the collection reaches a certain size.
+ * occurs once the collection reaches a certain size.
  */
 var $config = (function() {
 
@@ -16,7 +16,7 @@ var $config = (function() {
 
         var options = {
             capped: true,
-            size: 8192
+            size: 8192 // multiple of 256; larger than 4096 default
         };
 
         function uniqueCollectionName(prefix, tid, num) {
@@ -31,15 +31,16 @@ var $config = (function() {
             var size = Object.bsonsize(doc);
             assertAlways.gte(targetSize, size);
 
-            // Set 'field' as string with 'targetSize - size + 1' characters
-            doc.field = (new Array(targetSize - size + 1)).join('x');
+            // Set 'field' as string with enough characters
+            // to make the whole document 'size' bytes long
+            doc.field = new Array(targetSize - size + 1).join('x');
             assertAlways.eq(targetSize, Object.bsonsize(doc));
 
             return doc;
         }
 
         // Inserts a document of a certain size into the specified collection
-        // and returns it _id field.
+        // and returns its _id field.
         function insert(db, collName, targetSize) {
             var doc = makeDocWithSize(targetSize);
 
@@ -49,12 +50,10 @@ var $config = (function() {
             return doc._id;
         }
 
-        // Returns an array containing the _id field of all the documents
+        // Returns an array containing the _id fields of all the documents
         // in the collection.
         function getObjectIds(db, collName) {
-            return db[collName].find({}, { _id: 1 }).map(function(doc) {
-                return doc._id;
-            });
+            return db[collName].distinct('_id');
         }
 
         function init(db, collName) {
@@ -66,6 +65,8 @@ var $config = (function() {
             var myCollName = uniqueCollectionName(this.prefix, this.tid, this.num++);
             assertAlways.commandWorked(db.createCollection(myCollName, options));
 
+            // Define a large document to be half the size of the capped collection,
+            // and a small document to be an eighth the size of the capped collection.
             var largeDocSize = Math.floor(options.size / 2) - 1;
             var smallDocSize = Math.floor(options.size / 8) - 1;
 
@@ -75,7 +76,7 @@ var $config = (function() {
             ids.push(insert(db, myCollName, largeDocSize));
             ids.push(insert(db, myCollName, largeDocSize));
 
-            assertWhenOwnDB.contains(db[myCollName].count(), [1, 2]);
+            assertWhenOwnDB.contains(db[myCollName].itcount(), [1, 2]);
 
             // Insert another large document and verify that at least one
             // truncation has occurred. There may be 1 or 2 documents in
@@ -84,8 +85,8 @@ var $config = (function() {
 
             ids.push(insert(db, myCollName, largeDocSize));
 
-            count = db[myCollName].count();
-            assertWhenOwnDB.contains(count, [1, 2], 'expected truncate to occur');
+            count = db[myCollName].itcount();
+            assertWhenOwnDB.contains(count, [1, 2], 'expected truncation to occur');
             assertWhenOwnDB.eq(ids.slice(ids.length - count), getObjectIds(db, myCollName));
 
             // Insert multiple small documents and verify that at least one
@@ -98,8 +99,8 @@ var $config = (function() {
             ids.push(insert(db, myCollName, smallDocSize));
             ids.push(insert(db, myCollName, smallDocSize));
 
-            count = db[myCollName].count();
-            assertWhenOwnDB.contains(count, [4, 5], 'expected truncate to occur');
+            count = db[myCollName].itcount();
+            assertWhenOwnDB.contains(count, [4, 5], 'expected truncation to occur');
             assertWhenOwnDB.eq(ids.slice(ids.length - count), getObjectIds(db, myCollName));
         }
 
