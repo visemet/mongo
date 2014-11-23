@@ -7,7 +7,7 @@
  * collection on a separate database.
  *
  * Uses the "merge" action to combine the results with the contents
- * of the collection.
+ * of the output collection.
  *
  * Specifies nonAtomic=true.
  */
@@ -16,7 +16,7 @@ load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    // Use the workload name the prefix for the database name,
+    // Use the workload name as a prefix for the database name,
     // since the workload name is assumed to be unique.
     var prefix = 'map_reduce_merge_nonatomic';
 

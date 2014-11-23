@@ -7,7 +7,7 @@
  * collection on a separate database.
  *
  * Uses the "merge" action to combine the results with the contents
- * of the collection.
+ * of the output collection.
  *
  * Writes the results of each thread to the same collection.
  */
@@ -16,7 +16,7 @@ load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    // Use the workload name the database name,
+    // Use the workload name as the database name,
     // since the workload name is assumed to be unique.
     var uniqueDBName = 'map_reduce_merge';
 

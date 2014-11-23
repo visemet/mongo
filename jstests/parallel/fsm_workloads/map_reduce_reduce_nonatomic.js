@@ -7,7 +7,7 @@
  * collection.
  *
  * Uses the "reduce" action to combine the results with the contents
- * of the collection.
+ * of the output collection.
  *
  * Specifies nonAtomic=true and writes the results of each thread to
  * the same collection.

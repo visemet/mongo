@@ -7,7 +7,7 @@
  * collection.
  *
  * Uses the "reduce" action to combine the results with the contents
- * of the collection.
+ * of the output collection.
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config

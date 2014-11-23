@@ -4,6 +4,9 @@
  * Generates some random data and inserts it into a collection. Runs a
  * map-reduce command over the collection that computes the frequency
  * counts of the 'value' field and stores the results in a new collection.
+ *
+ * Uses the "replace" action to write the results to a nonexistent
+ * output collection.
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
