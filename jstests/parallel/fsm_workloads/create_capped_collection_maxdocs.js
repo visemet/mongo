@@ -40,7 +40,7 @@ var $config = extendWorkload($config, function($config, $super) {
         ids.push(this.insert(db, myCollName, largeDocSize));
         ids.push(this.insert(db, myCollName, largeDocSize));
 
-        assertWhenOwnDB.contains(db[myCollName].itcount(), [1, 2]);
+        assertWhenOwnDB.contains(db[myCollName].find().itcount(), [1, 2]);
 
         // Insert another large document and verify that at least one
         // truncation has occurred. There may be 1 or 2 documents in
@@ -49,7 +49,7 @@ var $config = extendWorkload($config, function($config, $super) {
 
         ids.push(this.insert(db, myCollName, largeDocSize));
 
-        count = db[myCollName].itcount();
+        count = db[myCollName].find().itcount();
         assertWhenOwnDB.contains(count, [1, 2], 'expected truncation to occur due to size');
         assertWhenOwnDB.eq(ids.slice(ids.length - count), this.getObjectIds(db, myCollName));
 
@@ -63,7 +63,7 @@ var $config = extendWorkload($config, function($config, $super) {
         ids.push(this.insert(db, myCollName, smallDocSize));
         ids.push(this.insert(db, myCollName, smallDocSize));
 
-        count = db[myCollName].itcount();
+        count = db[myCollName].find().itcount();
         assertWhenOwnDB.eq(3, count, 'expected truncation to occur due to number of docs');
         assertWhenOwnDB.eq(ids.slice(ids.length - count), this.getObjectIds(db, myCollName));
     }

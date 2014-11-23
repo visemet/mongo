@@ -78,7 +78,7 @@ var $config = (function() {
             ids.push(this.insert(db, myCollName, largeDocSize));
             ids.push(this.insert(db, myCollName, largeDocSize));
 
-            assertWhenOwnDB.contains(db[myCollName].itcount(), [1, 2]);
+            assertWhenOwnDB.contains(db[myCollName].find().itcount(), [1, 2]);
 
             // Insert another large document and verify that at least one
             // truncation has occurred. There may be 1 or 2 documents in
@@ -87,7 +87,7 @@ var $config = (function() {
 
             ids.push(this.insert(db, myCollName, largeDocSize));
 
-            count = db[myCollName].itcount();
+            count = db[myCollName].find().itcount();
             assertWhenOwnDB.contains(count, [1, 2], 'expected truncation to occur');
             assertWhenOwnDB.eq(ids.slice(ids.length - count), this.getObjectIds(db, myCollName));
 
@@ -101,7 +101,7 @@ var $config = (function() {
             ids.push(this.insert(db, myCollName, smallDocSize));
             ids.push(this.insert(db, myCollName, smallDocSize));
 
-            count = db[myCollName].itcount();
+            count = db[myCollName].find().itcount();
             assertWhenOwnDB.contains(count, [4, 5], 'expected truncation to occur');
             assertWhenOwnDB.eq(ids.slice(ids.length - count), this.getObjectIds(db, myCollName));
         }
