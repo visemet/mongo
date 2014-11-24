@@ -14,7 +14,7 @@ var $config = (function() {
         var size = Object.bsonsize(doc);
         assertAlways.gte(targetSize, size);
 
-        // Set 'field' as string with enough characters
+        // Set 'field' as a string with enough characters
         // to make the whole document 'size' bytes long
         doc.field = new Array(targetSize - size + 1).join('x');
         assertAlways.eq(targetSize, Object.bsonsize(doc));
@@ -34,9 +34,11 @@ var $config = (function() {
     }
 
     // Returns an array containing the _id fields of all the documents
-    // in the collection.
+    // in the collection, sorted according to their insertion order.
     function getObjectIds(db, collName) {
-        return db[collName].distinct('_id');
+        return db[collName].find({}, { _id: 1 }).map(function(doc) {
+            return doc._id;
+        });
     }
 
     var data = {
@@ -101,8 +103,15 @@ var $config = (function() {
             ids.push(this.insert(db, myCollName, smallDocSize));
             ids.push(this.insert(db, myCollName, smallDocSize));
 
+            var prevCount = count;
             count = db[myCollName].find().itcount();
-            assertWhenOwnDB.contains(count, [4, 5], 'expected truncation to occur');
+
+            if (prevCount === 1) {
+                assertWhenOwnDB.eq(4, count, 'expected truncation to occur');
+            } else { // prevCount === 2
+                assertWhenOwnDB.eq(5, count, 'expected truncation to occur');
+            }
+
             assertWhenOwnDB.eq(ids.slice(ids.length - count), this.getObjectIds(db, myCollName));
         }
 
