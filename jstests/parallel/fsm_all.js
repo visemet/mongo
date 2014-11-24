@@ -3,6 +3,7 @@ load('jstests/parallel/fsm_libs/runner.js');
 var dir = 'jstests/parallel/fsm_workloads';
 
 var blacklist = [
+    'drop_database.js', // SERVER-16285
     'indexed_insert_multikey.js' // SERVER-16143
 ].map(function(file) { return dir + '/' + file; });
 
