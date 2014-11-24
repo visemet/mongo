@@ -895,7 +895,7 @@ namespace mongo {
                           "files");
         }
 
-        storageGlobalParams.engine = params["storage.engine"].as<string>();
+        storageGlobalParams.engineRaw = params["storage.engine"].as<string>();
 
         if (params.count("storage.dbPath")) {
             storageGlobalParams.dbpath = params["storage.dbPath"].as<string>();

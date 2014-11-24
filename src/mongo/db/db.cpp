@@ -508,7 +508,7 @@ namespace mongo {
             snmpInit();
         }
 
-        getGlobalEnvironment()->setGlobalStorageEngine(storageGlobalParams.engine);
+        getGlobalEnvironment()->setGlobalStorageEngine(storageGlobalParams.engineRaw);
 
         boost::filesystem::remove_all(storageGlobalParams.dbpath + "/_tmp/");
 

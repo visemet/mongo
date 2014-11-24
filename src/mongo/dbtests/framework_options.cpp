@@ -212,7 +212,7 @@ namespace mongo {
             }
         }
 
-        storageGlobalParams.engine = params["storage.engine"].as<string>();
+        storageGlobalParams.engineRaw = params["storage.engine"].as<string>();
 
         if (params.count("suites")) {
             frameworkGlobalParams.suites = params["suites"].as< vector<string> >();

@@ -83,6 +83,8 @@ namespace mongo {
         // Do not proceed if data directory has been used by a different storage engine previously.
         //StorageEngineMetadata::validate(storageGlobalParams.dbpath, canonicalName);
 
+        // Set the storage engine name as the canonicalized version
+        storageGlobalParams.engine = canonicalName;
         _storageEngine = factory->create(storageGlobalParams);
         _storageEngine->finishInit();
 

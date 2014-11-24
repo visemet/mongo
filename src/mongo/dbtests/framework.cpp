@@ -116,7 +116,7 @@ namespace mongo {
             printOpenSSLVersion();
             printSysInfo();
 
-            getGlobalEnvironment()->setGlobalStorageEngine(storageGlobalParams.engine);
+            getGlobalEnvironment()->setGlobalStorageEngine(storageGlobalParams.engineRaw);
 
             TestWatchDog twd;
             twd.go();

@@ -50,6 +50,7 @@ namespace mongo {
 
         StorageGlobalParams() :
             engine("mmapv1"),
+            engineRaw(engine),
             dbpath(kDefaultDbPath),
             upgrade(false),
             repair(false) {
@@ -64,9 +65,12 @@ namespace mongo {
 #endif
         }
 
-        // --storageEngine
-        // storage engine for this instance of mongod.
+        // The canonicalized name of the storage engine for this instance of mongod.
         std::string engine;
+
+        // --storageEngine
+        // The name of the storage engine for this instance of mongod.
+        std::string engineRaw;
 
         // The directory where the mongod instance stores its data.
         std::string dbpath;
