@@ -12,9 +12,9 @@ load('jstests/parallel/fsm_workloads/agg_base.js'); // for $config
 var $config = extendWorkload($config, function($config, $super) {
 
     // use enough docs to exceed 100MB, the in-memory limit for $sort and $group
-    $config.data.numDocs = 24*1000;
-    var MB = 1<<20;
-    assertAlways.lte(100*MB, $config.data.numDocs * $config.data.docSize / 2);
+    $config.data.numDocs = 24 * 1000;
+    var MB = 1024 * 1024; // bytes
+    assertAlways.lte(100 * MB, $config.data.numDocs * $config.data.docSize / 2);
 
     $config.states.query = function(db, collName) {
         var otherCollName = collName + '_out_agg_sort_external_' + this.tid;

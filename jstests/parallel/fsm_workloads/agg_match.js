@@ -19,7 +19,7 @@ var $config = extendWorkload($config, function($config, $super) {
         // But I really want to call .count() here, because I want the count instantly;
         // I don't want to create a cursor that could be invalidated if the collection is replaced
         // while I'm iterating.
-        assertWhenOwnColl.eq(db[collName].count()/2, db[otherCollName].count());
+        assertWhenOwnColl.eq(db[collName].count() / 2, db[otherCollName].count());
     };
 
     return $config;

@@ -9,9 +9,6 @@ load('jstests/parallel/fsm_workloads/agg_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    //$config.data.numDocsQueried = $config.data.numDocsInserted / 2;
-    $config.data.numDocsQueried = 0;
-
     $config.states.query = function(db, collName) {
         var otherCollName = collName + '_out_agg_sort_' + this.tid;
         var cursor = db[collName].aggregate([
