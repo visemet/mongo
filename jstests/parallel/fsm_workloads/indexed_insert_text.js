@@ -11,10 +11,18 @@ var $config = (function() {
         },
 
         insert: function insert(db, collName) {
-            var randomText = this.getRandomTextSnippet();
-            var res = db[collName].insert({ v: randomText });
+            var snippet = this.getRandomTextSnippet();
+            var res = db[collName].insert({ v: snippet });
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
+
+            // Searching for the text we inserted should return at least one doc.
+            // It might also return docs inserted by other threads, but it should always return
+            // something.
+            if (Array.isArray(snippet)) {
+                snippet = snippet.join(' ');
+            }
+            assertWhenOwnColl.gt(db[collName].find({ $text: { $search: snippet } }).itcount(), 0);
         }
     };
 
@@ -104,7 +112,7 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: {
-            getRandomTextSnippet: function() {
+            getRandomTextSnippet: function getRandomTextSnippet() {
                 return this.text[Random.randInt(this.text.length)];
             },
             text: text

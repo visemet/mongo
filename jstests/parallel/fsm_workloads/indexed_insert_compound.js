@@ -3,7 +3,7 @@
  *
  * Inserts documents into an indexed collection and asserts that the documents
  * appear in both a collection scan and an index scan. The collection is indexed
- * with a compound index on three integer fields.
+ * with a compound index on three different fields.
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
@@ -12,15 +12,13 @@ var $config = extendWorkload($config, function($config, $super) {
 
     $config.states.init = function(db, collName) {
         $super.states.init.apply(this, arguments);
-
-        this.indexedValue = String.fromCharCode(33 + this.tid);
     };
 
     $config.data.getDoc = function() {
         return {
-            x: this.indexedValue,
-            y: this.indexedValue,
-            z: this.indexedValue
+            x: this.tid & 0x0f, // lowest 4 bits
+            y: this.tid >> 4,   // high bits
+            z: String.fromCharCode(33 + this.tid)
         };
     };
 

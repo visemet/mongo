@@ -12,11 +12,11 @@ var $config = extendWorkload($config, function($config, $super) {
         $super.states.init.apply(this, arguments);
     };
 
-    $config.data.getRandomText = function() {
-        var len = Random.randInt(5);
+    $config.data.getRandomTextSnippet = function() {
+        var len = Random.randInt(5) + 1;  // ensure we always add some text, not just empty array
         var textArr = [];
         for (var i = 0; i < len; ++i) {
-            textArr.push($super.data.getRandomText.call(this, arguments));
+            textArr.push($super.data.getRandomTextSnippet.call(this, arguments));
         }
         return textArr;
     };
