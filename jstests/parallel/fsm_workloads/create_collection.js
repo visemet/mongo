@@ -48,7 +48,7 @@ var $config = (function() {
         res.collections.forEach(function(collInfo) {
             db[collInfo.name].drop();
         });
-    }
+    };
 
     return {
         threadCount: 5,
