@@ -45,5 +45,15 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
+    $config.teardown = function(db, collName) {
+        var pattern = new RegExp('^' + prefix);
+        var res = db.runCommand('listCollections', { filter: { name: pattern } });
+        assertAlways.commandWorked(res);
+
+        res.collections.forEach(function(collInfo) {
+            assertAlways(db[collInfo.name].drop());
+        });
+    };
+
     return $config;
 });

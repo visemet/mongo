@@ -51,5 +51,18 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
+    $config.teardown = function(db, collName) {
+        var res = db.adminCommand('listDatabases');
+        assertAlways.commandWorked(res);
+
+        res.databases.forEach(function(dbInfo) {
+            if (dbInfo.name.startsWith(prefix)) {
+                var res = db.getSiblingDB(dbInfo.name).dropDatabase();
+                assertAlways.commandWorked(res);
+                assertAlways.eq(dbInfo.name, res.dropped);
+            }
+        });
+    };
+
     return $config;
 });
