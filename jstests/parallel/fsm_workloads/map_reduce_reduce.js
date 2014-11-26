@@ -11,6 +11,7 @@
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
+load('jstests/parallel/fsm_workload_helpers/drop_utils.js'); // for dropCollections
 
 var $config = extendWorkload($config, function($config, $super) {
 
@@ -44,13 +45,8 @@ var $config = extendWorkload($config, function($config, $super) {
     };
 
     $config.teardown = function(db, collName) {
-        var pattern = new RegExp('^' + prefix);
-        var res = db.runCommand('listCollections', { filter: { name: pattern } });
-        assertAlways.commandWorked(res);
-
-        res.collections.forEach(function(collInfo) {
-            assertAlways(db[collInfo.name].drop());
-        });
+        var pattern = new RegExp('^' + prefix + '\d');
+        dropCollections(db, pattern);
     };
 
     return $config;

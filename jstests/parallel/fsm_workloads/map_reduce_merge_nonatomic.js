@@ -13,6 +13,7 @@
  */
 load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
+load('jstests/parallel/fsm_workload_helpers/drop_utils.js'); // for dropDatabases
 
 var $config = extendWorkload($config, function($config, $super) {
 
@@ -52,16 +53,8 @@ var $config = extendWorkload($config, function($config, $super) {
     };
 
     $config.teardown = function(db, collName) {
-        var res = db.adminCommand('listDatabases');
-        assertAlways.commandWorked(res);
-
-        res.databases.forEach(function(dbInfo) {
-            if (dbInfo.name.startsWith(prefix)) {
-                var res = db.getSiblingDB(dbInfo.name).dropDatabase();
-                assertAlways.commandWorked(res);
-                assertAlways.eq(dbInfo.name, res.dropped);
-            }
-        });
+        var pattern = new RegExp('^' + prefix + '\d');
+        dropDatabases(db, pattern);
     };
 
     return $config;
