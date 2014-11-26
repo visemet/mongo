@@ -40,7 +40,7 @@ var $config = extendWorkload($config, function($config, $super) {
     };
 
     $config.teardown = function(db, collName) {
-        var pattern = new RegExp('^' + prefix + '\d');
+        var pattern = new RegExp('^' + prefix + '\d+$');
         dropCollections(db, pattern);
     };
 
