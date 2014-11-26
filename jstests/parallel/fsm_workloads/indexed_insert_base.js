@@ -7,6 +7,25 @@
  */
 var $config = (function() {
 
+    function makeSortSpecFromIndexSpec(ixSpec) {
+        var sort = {};
+
+        for (var field in ixSpec) {
+            if (!ixSpec.hasOwnProperty(field)) {
+                continue;
+            }
+
+            var order = ixSpec[field];
+            if (order !== 1 && order !== -1) { // e.g. '2d' or '2dsphere'
+                order = 1;
+            }
+
+            sort[field] = order;
+        }
+
+        return sort;
+    }
+
     var states = {
         init: function init(db, collName) {
             this.nInserted = 0;
@@ -24,8 +43,19 @@ var $config = (function() {
             var count = db[collName].find(this.getDoc()).sort({ $natural: 1 }).itcount();
             assertWhenOwnColl.eq(count, this.nInserted);
 
-            // index scan
-            count = db[collName].find(this.getDoc()).sort(this.getIndexSpec()).itcount();
+            // Use hint() to force an index scan, but only when an appropriate index exists
+            if (this.indexExists) {
+                count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
+            }
+
+            // Otherwise, impose a sort ordering over the collection scan
+            else {
+                // For single and compound-key indexes, the index specification is a
+                // valid sort spec; however, for geospatial and text indexes it is not
+                var sort = makeSortSpecFromIndexSpec(this.getIndexSpec());
+                count = db[collName].find(this.getDoc()).sort(sort).itcount();
+            }
+
             assertWhenOwnColl.eq(count, this.nInserted);
         }
     };
@@ -37,7 +67,9 @@ var $config = (function() {
     };
 
     function setup(db, collName) {
-        db[collName].ensureIndex(this.getIndexSpec());
+        var res = db[collName].ensureIndex(this.getIndexSpec());
+        assertAlways.commandWorked(res);
+        this.indexExists = true;
     }
 
     return {

@@ -30,8 +30,8 @@ var $config = (function() {
         },
 
         count: function count(db, collName) {
-            var count = db[collName].find({ tid: this.tid }).itcount();
-            assertWhenOwnColl.eq(this.numDocs, count);
+            var numDocs = db[collName].find({ tid: this.tid }).itcount();
+            assertWhenOwnColl.eq(this.numDocs, numDocs);
         }
     };
 

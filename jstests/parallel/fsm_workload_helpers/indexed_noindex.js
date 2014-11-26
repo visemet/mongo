@@ -11,6 +11,7 @@ function indexedNoindex($config, $super) {
 
         var res = db[collName].dropIndex(this.getIndexSpec());
         assertAlways.commandWorked(res);
+        this.indexExists = false;
     };
 
     return $config;
