@@ -48,7 +48,7 @@ function runWorkloadsInParallel(workloads, clusterOptions) {
         // 'workload' is a JS file expected to set the global $config variable to an object.
         load(workload);
         assert.neq(typeof $config, 'undefined');
-        context[workload] = { config: $config };
+        context[workload] = { config: parseConfig($config) };
     });
 
     _runAllWorkloads(workloads, context, clusterOptions);
@@ -62,7 +62,7 @@ function runMixtureOfWorkloads(workloads, clusterOptions) {
         // 'workload' is a JS file expected to set the global $config variable to an object.
         load(workload);
         assert.neq(typeof $config, 'undefined');
-        context[workload] = { config: $config };
+        context[workload] = { config: parseConfig($config) };
     });
 
     clusterOptions = Object.extend({}, clusterOptions, true); // defensive deep copy
@@ -259,7 +259,7 @@ function setupCluster(clusterOptions, dbName) {
 
 function _runWorkload(workload, config, clusterOptions) {
     var context = {};
-    context[workload] = { config: config };
+    context[workload] = { config: parseConfig(config) };
     _runAllWorkloads([workload], context, clusterOptions);
 }
 
@@ -274,7 +274,6 @@ function setUpWorkloads(workloads, context) {
         var collName = context[workload].collName;
 
         var config = context[workload].config;
-        config = parseConfig(config);
         config.setup.call(config.data, myDB, collName);
 
         return {
@@ -419,8 +418,9 @@ function makeAllThreads(workloads, context, clusterOptions, compose) {
         var config = context[workload].config;
 
         for (var i = 0; i < config.threadCount; ++i) {
+            config.data.tid = tid++;
             var args = {
-                tid: tid++,
+                data: config.data,
                 latch: latch,
                 dbName: context[workload].dbName,
                 collName: context[workload].collName,

@@ -1,7 +1,8 @@
 var workerThread = (function() {
 
     // workloads = list of workload filenames
-    // args.tid = the thread identifier
+    // args.data = the 'this' parameter passed to the FSM state functions
+    // args.data.tid = the thread identifier
     // args.latch = the CountDownLatch instance for starting all threads
     // args.dbName = the database name
     // args.collName = the collection name
@@ -30,11 +31,16 @@ var workerThread = (function() {
 
             load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
             workloads.forEach(function(workload) {
-                load(workload);
+                load(workload); // for $config
                 var config = parseConfig($config); // to normalize
-                config.data.tid = args.tid;
+
+                // Copy any modifications that were made to $config.data
+                // during the setup function of the workload
+                var data = Object.extend({}, args.data, true);
+                data = Object.extend(data, config.data, true);
+
                 configs[workload] = {
-                    data: config.data,
+                    data: data,
                     db: myDB,
                     collName: args.collName,
                     startState: config.startState,
