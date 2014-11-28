@@ -1,6 +1,7 @@
 load('jstests/libs/parallelTester.js');
 load('jstests/parallel/fsm_libs/assert.js');
 load('jstests/parallel/fsm_libs/name_utils.js');
+load('jstests/parallel/fsm_libs/parse_config.js');
 load('jstests/parallel/fsm_libs/worker_thread.js');
 
 
@@ -99,73 +100,6 @@ function runMixtureOfWorkloads(workloads, clusterOptions) {
     }
 
     throwError(errors);
-}
-
-// Validate the config object and return a normalized copy of it.
-// Normalized means all optional parameters are set to their default values,
-// and any parameters that need to be coerced have been coerced.
-function parseConfig(config) {
-    // make a deep copy so we can mutate config without surprising the caller
-    config = Object.extend({}, config, true);
-    var allowedKeys = [
-        'data',
-        'iterations',
-        'setup',
-        'startState',
-        'states',
-        'teardown',
-        'threadCount',
-        'transitions'
-    ];
-    Object.keys(config).forEach(function(k) {
-        assert.gte(allowedKeys.indexOf(k), 0,
-                   'invalid config parameter: ' + k + '; valid parameters are: ' +
-                   tojson(allowedKeys));
-    });
-
-    assert.eq('number', typeof config.threadCount);
-
-    assert.eq('number', typeof config.iterations);
-
-    config.startState = config.startState || 'init';
-    assert.eq('string', typeof config.startState);
-
-    assert.eq('object', typeof config.states);
-    assert.gt(Object.keys(config.states).length, 0);
-    Object.keys(config.states).forEach(function(k) {
-        assert.eq('function', typeof config.states[k],
-                   'config.states.' + k + ' is not a function');
-        assert.eq(2, config.states[k].length,
-                  'state functions should accept 2 parameters: db and collName');
-    });
-
-    // assert all states mentioned in config.transitions are present in config.states
-    assert.eq('object', typeof config.transitions);
-    assert.gt(Object.keys(config.transitions).length, 0);
-    Object.keys(config.transitions).forEach(function(fromState) {
-        assert(config.states.hasOwnProperty(fromState),
-               'config.transitions contains a state not in config.states: ' + fromState);
-
-        assert.gt(Object.keys(config.transitions[fromState]).length, 0);
-        Object.keys(config.transitions[fromState]).forEach(function(toState) {
-            assert(config.states.hasOwnProperty(toState),
-                   'config.transitions.' + fromState +
-                   ' contains a state not in config.states: ' + toState);
-            assert.eq('number', typeof config.transitions[fromState][toState],
-                      'transitions.' + fromState + '.' + toState + ' should be a number');
-        });
-    });
-
-    config.setup = config.setup || function(){};
-    assert.eq('function', typeof config.setup);
-
-    config.teardown = config.teardown || function(){};
-    assert.eq('function', typeof config.teardown);
-
-    config.data = config.data || {};
-    assert.eq('object', typeof config.data);
-
-    return config;
 }
 
 function setupCluster(clusterOptions, dbName) {

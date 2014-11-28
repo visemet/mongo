@@ -29,7 +29,7 @@ var workerThread = (function() {
                 myDB = db.getSiblingDB(args.dbName);
             }
 
-            load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
+            load('jstests/parallel/fsm_libs/parse_config.js'); // for parseConfig
             workloads.forEach(function(workload) {
                 load(workload); // for $config
                 var config = parseConfig($config); // to normalize

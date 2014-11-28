@@ -7,7 +7,7 @@
  * documents appear in both a collection scan and an index scan. The indexed
  * value is a 1-character string based on the thread's id.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for parseConfig
+load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
