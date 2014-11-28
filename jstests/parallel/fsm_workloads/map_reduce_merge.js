@@ -20,13 +20,13 @@ var $config = extendWorkload($config, function($config, $super) {
     // since the workload name is assumed to be unique.
     var uniqueDBName = 'map_reduce_merge';
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.outDBName = uniqueDBName;
     };
 
-    $config.states.mapReduce = function(db, collName) {
+    $config.states.mapReduce = function mapReduce(db, collName) {
         var outDB = db.getSiblingDB(this.outDBName);
         var fullName = outDB[collName].getFullName();
         assertAlways(outDB[collName].exists() !== null,
@@ -45,14 +45,14 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
-    $config.setup = function(db, collName) {
+    $config.setup = function setup(db, collName) {
         $super.setup.apply(this, arguments);
 
         var outDB = db.getSiblingDB(uniqueDBName);
         assertAlways.commandWorked(outDB.createCollection(collName));
     };
 
-    $config.teardown = function(db, collName) {
+    $config.teardown = function teardown(db, collName) {
         var outDB = db.getSiblingDB(uniqueDBName);
         var res = outDB.dropDatabase();
         assertAlways.commandWorked(res);

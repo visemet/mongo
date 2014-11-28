@@ -21,13 +21,13 @@ var $config = extendWorkload($config, function($config, $super) {
     // since the workload name is assumed to be unique.
     var uniqueCollectionName = 'map_reduce_reduce_nonatomic';
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.outCollName = uniqueCollectionName;
     };
 
-    $config.states.mapReduce = function(db, collName) {
+    $config.states.mapReduce = function mapReduce(db, collName) {
         var fullName = db[this.outCollName].getFullName();
         assertAlways(db[this.outCollName].exists() !== null,
                      "output collection '" + fullName + "' should exist");
@@ -45,13 +45,13 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
-    $config.setup = function(db, collName) {
+    $config.setup = function setup(db, collName) {
         $super.setup.apply(this, arguments);
 
         assertAlways.commandWorked(db.createCollection(uniqueCollectionName));
     };
 
-    $config.teardown = function(db, collName) {
+    $config.teardown = function teardown(db, collName) {
         assertAlways(db[uniqueCollectionName].drop());
     };
 

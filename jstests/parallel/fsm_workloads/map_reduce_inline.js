@@ -79,7 +79,7 @@ var $config = (function() {
         };
     }
 
-    var setup = function(db, collName) {
+    function setup(db, collName) {
         var bulk = db[collName].initializeUnorderedBulkOp();
         for (var i = 0; i < this.numDocs; ++i) {
             // TODO: this actually does assume that there are no unique indexes
@@ -90,7 +90,7 @@ var $config = (function() {
         var res = bulk.execute();
         assertAlways.writeOK(res);
         assertAlways.eq(this.numDocs, res.nInserted);
-    };
+    }
 
     return {
         threadCount: 20,

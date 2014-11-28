@@ -25,7 +25,7 @@ var $config = extendWorkload($config, function($config, $super) {
         return prefix + tid;
     }
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.outDBName = uniqueDBName(prefix, this.tid);
@@ -33,7 +33,7 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(outDB.createCollection(collName));
     };
 
-    $config.states.mapReduce = function(db, collName) {
+    $config.states.mapReduce = function mapReduce(db, collName) {
         var outDB = db.getSiblingDB(this.outDBName);
         var fullName = outDB[collName].getFullName();
         assertAlways(outDB[collName].exists() !== null,
@@ -52,8 +52,8 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
-    $config.teardown = function(db, collName) {
-        var pattern = new RegExp('^' + prefix + '\d+$');
+    $config.teardown = function teardown(db, collName) {
+        var pattern = new RegExp('^' + prefix + '\\d+$');
         dropDatabases(db, pattern);
     };
 

@@ -23,14 +23,14 @@ var $config = extendWorkload($config, function($config, $super) {
         return prefix + tid;
     }
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.outCollName = uniqueCollectionName(prefix, this.tid);
         assertAlways.commandWorked(db.createCollection(this.outCollName));
     };
 
-    $config.states.mapReduce = function(db, collName) {
+    $config.states.mapReduce = function mapReduce(db, collName) {
         var fullName = db[this.outCollName].getFullName();
         assertAlways(db[this.outCollName].exists() !== null,
                      "output collection '" + fullName + "' should exist");
@@ -46,8 +46,8 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.commandWorked(res);
     };
 
-    $config.teardown = function(db, collName) {
-        var pattern = new RegExp('^' + prefix + '\d+$');
+    $config.teardown = function teardown(db, collName) {
+        var pattern = new RegExp('^' + prefix + '\\d+$');
         dropCollections(db, pattern);
     };
 

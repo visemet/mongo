@@ -1,6 +1,6 @@
 
 /**
- * Helpers for dropping any collections or databases created by a workload
+ * Helpers for dropping collections or databases created by a workload
  * during its execution.
  */
 

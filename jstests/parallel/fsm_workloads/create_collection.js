@@ -42,10 +42,10 @@ var $config = (function() {
         create: { create: 1 }
     };
 
-    var teardown = function(db, collName) {
-        var pattern = new RegExp('^' + this.prefix + '\d+_\d+$');
+    function teardown(db, collName) {
+        var pattern = new RegExp('^' + this.prefix + '\\d+_\\d+$');
         dropCollections(db, pattern);
-    };
+    }
 
     return {
         threadCount: 5,
