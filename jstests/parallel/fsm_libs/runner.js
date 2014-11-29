@@ -1,6 +1,6 @@
 load('jstests/libs/parallelTester.js');
 load('jstests/parallel/fsm_libs/assert.js');
-load('jstests/parallel/fsm_libs/utils.js');
+load('jstests/parallel/fsm_libs/name_utils.js');
 load('jstests/parallel/fsm_libs/worker_thread.js');
 
 
