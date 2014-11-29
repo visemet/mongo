@@ -4,7 +4,7 @@ load('jstests/libs/parallelTester.js'); // for ScopedThread and CountDownLatch
 load('jstests/parallel/fsm_libs/worker_thread.js'); // for workerThread
 
 /**
- * TODO: write description
+ * Helper for spawning and joining worker threads.
  */
 
 var ThreadManager = function(clusterOptions, executionMode) {
@@ -37,10 +37,8 @@ var ThreadManager = function(clusterOptions, executionMode) {
     var initialized = false;
     var threads = [];
     var threadCounts = {};
-    var connections = [];
 
     var _workloads, _context;
-    var _connPool;
 
     this.init = function init(workloads, context, maxAllowedThreads) {
         assert.eq('number', typeof maxAllowedThreads,
@@ -84,13 +82,10 @@ var ThreadManager = function(clusterOptions, executionMode) {
         initialized = true;
     };
 
-    this.spawnAll = function spawnAll(connPool) {
+    this.spawnAll = function spawnAll(host) {
         if (!initialized) {
             throw new Error('thread manager has not been initialized yet');
         }
-
-        assert.gte(connPool.getSize(), latch.getCount(),
-                   'not enough connections for all threads');
 
         var tid = 0;
         _workloads.forEach(function(workload) {
@@ -102,14 +97,10 @@ var ThreadManager = function(clusterOptions, executionMode) {
             var config = _context[workload].config;
 
             for (var i = 0; i < threadCounts[workload]; ++i) {
-                var conn = connPool.acquire();
-                connections.push(conn);
-
                 config.data.tid = tid++;
                 var args = {
-                    // conn: conn,
-                    conn: conn.getDB(_context[workload].dbName),
                     data: config.data,
+                    host: host,
                     latch: latch,
                     dbName: _context[workload].dbName,
                     collName: _context[workload].collName,
@@ -123,8 +114,6 @@ var ThreadManager = function(clusterOptions, executionMode) {
                 t.start();
             }
         });
-
-        _connPool = connPool;
     };
 
     this.checkFailed = function checkFailed(allowedFailurePercent) {
@@ -162,28 +151,26 @@ var ThreadManager = function(clusterOptions, executionMode) {
 
         var errors = [];
 
-        threads.forEach(function(t, i) {
+        threads.forEach(function(t) {
             t.join();
 
             var data = t.returnData();
             if (data && !data.ok) {
                 errors.push(data);
             }
-
-            _connPool.release(connections[i]);
         });
 
         initialized = false;
         threads = [];
         threadCounts = {};
-        connections = [];
 
         return errors;
     };
 };
 
 /**
- * TODO: add description
+ * Extensions to the 'workerThread' module for executing a single FSM-based
+ * workload and a composition of them, respectively.
  */
 
 workerThread.fsm = function(workloads, args) {

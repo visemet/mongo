@@ -1,3 +1,4 @@
+'use strict';
 
 /**
  * Helpers for controlling under which situations an assert is actually executed.

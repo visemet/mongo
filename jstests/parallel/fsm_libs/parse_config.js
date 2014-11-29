@@ -1,3 +1,4 @@
+'use strict';
 
 // Validate the config object and return a normalized copy of it.
 // Normalized means all optional parameters are set to their default values,

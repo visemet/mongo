@@ -1,3 +1,5 @@
+'use strict';
+
 var fsm = (function() {
     // args.data = 'this' object of the state functions
     // args.db = database object

@@ -1,3 +1,5 @@
+'use strict';
+
 load('jstests/parallel/fsm_libs/fsm.js');
 
 var composer = (function() {

@@ -1,3 +1,4 @@
+'use strict';
 
 /**
  * Represents a MongoDB cluster.
@@ -120,4 +121,12 @@ var Cluster = function(options) {
         assert(this.isSharded(), 'cluster is not sharded');
         throw new Error('cluster is not initialized yet');
     };
+};
+
+/**
+ * Returns true if 'clusterOptions' represents a standalone mongod,
+ * and false otherwise.
+ */
+Cluster.isStandalone = function isStandalone(clusterOptions) {
+    return !clusterOptions.sharded && !clusterOptions.replication && !clusterOptions.masterSlave;
 };

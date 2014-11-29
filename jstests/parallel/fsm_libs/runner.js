@@ -1,8 +1,10 @@
-load('jstests/libs/parallelTester.js');
+'use strict';
+
+load('jstests/parallel/fsm_libs/assert.js');
 load('jstests/parallel/fsm_libs/cluster.js');
 load('jstests/parallel/fsm_libs/name_utils.js');
 load('jstests/parallel/fsm_libs/parse_config.js');
-load('jstests/parallel/fsm_libs/worker_thread.js');
+load('jstests/parallel/fsm_libs/thread_mgr.js');
 
 var runner = (function() {
 
@@ -26,7 +28,7 @@ var runner = (function() {
         mode.parallel = mode.parallel || false;
         assert.eq('boolean', typeof mode.parallel);
 
-        assert(!(mode.composed && mode.parallel),
+        assert(!mode.composed || !mode.parallel,
                "properties 'composed' and 'parallel' cannot both be true");
 
         return mode;
@@ -44,9 +46,15 @@ var runner = (function() {
     }
 
     function runWorkloads(workloads, clusterOptions, executionMode) {
-        assert.gt(workloads.length, 0);
+        assert.gt(workloads.length, 0, 'need at least one workload to run');
 
         executionMode = validateExecutionMode(executionMode);
+
+        clusterOptions = Object.extend({}, clusterOptions, true); // defensive deep copy
+        if (executionMode.composed) {
+            clusterOptions.sameDB = true;
+            clusterOptions.sameCollection = true;
+        }
 
         var context = {};
         workloads.forEach(function(workload) {
@@ -55,29 +63,32 @@ var runner = (function() {
             context[workload] = { config: parseConfig($config) };
         });
 
-        clusterOptions = Object.extend({}, clusterOptions, true); // defensive deep copy
-        if (executionMode.composed) {
-            clusterOptions.sameDB = true;
-            clusterOptions.sameCollection = true;
-        }
+        var threadMgr = new ThreadManager(clusterOptions, executionMode);
 
         var cluster = new Cluster(clusterOptions);
         cluster.setup();
+
+        var maxAllowedConnections = 100;
+        Random.setRandomSeed(clusterOptions.seed);
 
         try {
             var schedule = scheduleWorkloads(workloads, executionMode);
             schedule.forEach(function(workloads) {
                 var cleanup = [];
                 var errors = [];
+                var teardownFailed = false;
+
+                jsTest.log(workloads.join('\n'));
 
                 try {
                     prepareCollections(workloads, context, cluster, clusterOptions);
                     cleanup = setUpWorkloads(workloads, context);
 
-                    var threads = makeAllThreads(workloads, context, clusterOptions,
-                                                 executionMode.composed);
+                    threadMgr.init(workloads, context, maxAllowedConnections);
+                    threadMgr.spawnAll(cluster.getHost());
+                    threadMgr.checkFailed(0.2);
 
-                    errors = joinThreads(threads);
+                    errors = threadMgr.joinAll();
 
                 } finally {
                     // TODO: does order of calling 'config.teardown' matter?
@@ -85,13 +96,17 @@ var runner = (function() {
                         try {
                             teardown.fn.call(teardown.data, teardown.db, teardown.collName);
                         } catch (err) {
-                            // TODO: throw error (at end) if 'errors' is empty
                             print('Teardown function threw an exception:\n' + err.stack);
+                            teardownFailed = true;
                         }
                     });
                 }
 
                 throwError(errors);
+
+                if (teardownFailed) {
+                    throw new Error('workload teardown function(s) threw an exception, see logs');
+                }
             });
 
         } finally {
@@ -195,128 +210,6 @@ function prepareCollections(workloads, context, cluster, clusterOptions) {
     });
 }
 
-function makeAllThreads(workloads, context, clusterOptions, composed) {
-    var threadFn, getWorkloads;
-    if (composed) {
-        // Worker threads need to load() all workloads when composed
-        threadFn = workerThread.composed;
-        getWorkloads = function() { return workloads; };
-    } else {
-        // Worker threads only need to load() the specified workload
-        threadFn = workerThread.fsm;
-        getWorkloads = function(workload) { return [workload]; };
-    }
-
-    function sumRequestedThreads() {
-        return Array.sum(workloads.map(function(wl) {
-            return context[wl].config.threadCount;
-        }));
-    }
-
-    // TODO: pick a better cap for maximum allowed threads?
-    var maxAllowedThreads = 100;
-    var requestedNumThreads = sumRequestedThreads();
-    if (requestedNumThreads > maxAllowedThreads) {
-        print('\n\ntoo many threads requested: ' + requestedNumThreads);
-        // Scale down the requested '$config.threadCount' values to make
-        // them sum to less than 'maxAllowedThreads'
-        var factor = maxAllowedThreads / requestedNumThreads;
-        workloads.forEach(function(workload) {
-            var threadCount = context[workload].config.threadCount;
-            threadCount = Math.floor(factor * threadCount);
-            threadCount = Math.max(1, threadCount); // ensure workload is executed
-            context[workload].config.threadCount = threadCount;
-        });
-    }
-    var numThreads = sumRequestedThreads();
-    print('using num threads: ' + numThreads);
-    assert.lte(numThreads, maxAllowedThreads);
-
-    var latch = new CountDownLatch(numThreads);
-
-    var threads = [];
-
-    jsTest.log(workloads.join('\n'));
-    Random.setRandomSeed(clusterOptions.seed);
-
-    var tid = 0;
-    workloads.forEach(function(workload) {
-        var workloadsToLoad = getWorkloads(workload);
-        var config = context[workload].config;
-
-        for (var i = 0; i < config.threadCount; ++i) {
-            config.data.tid = tid++;
-            var args = {
-                data: config.data,
-                latch: latch,
-                dbName: context[workload].dbName,
-                collName: context[workload].collName,
-                clusterOptions: clusterOptions,
-                seed: Random.randInt(1e13), // contains range of Date.getTime()
-                globalAssertLevel: globalAssertLevel
-            };
-
-            // Wrap threadFn with try/finally to make sure it always closes the db connection
-            // that is implicitly created within the thread's scope.
-            var guardedThreadFn = function(threadFn, args) {
-                try {
-                    return threadFn.apply(this, args);
-                } finally {
-                    db = null;
-                    gc();
-                }
-            };
-
-            var t = new ScopedThread(guardedThreadFn, threadFn, [workloadsToLoad, args]);
-            threads.push(t);
-            t.start();
-
-            // Wait a little before starting the next thread
-            // to avoid creating new connections at the same time
-            sleep(10);
-        }
-    });
-
-    var failedThreadIndexes = [];
-    while (latch.getCount() > 0) {
-        threads.forEach(function(t, i) {
-            if (t.hasFailed() && !Array.contains(failedThreadIndexes, i)) {
-                failedThreadIndexes.push(i);
-                latch.countDown();
-            }
-        });
-
-        sleep(100);
-    }
-
-    var failedThreads = failedThreadIndexes.length;
-    if (failedThreads > 0) {
-        print(failedThreads + ' thread(s) threw a JS or C++ exception while spawning');
-    }
-
-    var allowedFailure = 0.2;
-    if (failedThreads / numThreads > allowedFailure) {
-        throw new Error('Too many worker threads failed to spawn - aborting');
-    }
-
-    return threads;
-}
-
-function joinThreads(workerThreads) {
-    var workerErrs = [];
-
-    workerThreads.forEach(function(t) {
-        t.join();
-
-        var data = t.returnData();
-        if (data && !data.ok) {
-            workerErrs.push(data);
-        }
-    });
-
-    return workerErrs;
-}
-
 function throwError(workerErrs) {
 
     // Returns an array containing all unique values from the specified array
@@ -390,24 +283,3 @@ function throwError(workerErrs) {
         throw err;
     }
 }
-
-workerThread.fsm = function(workloads, args) {
-    load('jstests/parallel/fsm_libs/worker_thread.js'); // for workerThread.main
-    load('jstests/parallel/fsm_libs/fsm.js'); // for fsm.run
-
-    return workerThread.main(workloads, args, function(configs) {
-        var workloads = Object.keys(configs);
-        assert.eq(1, workloads.length);
-        fsm.run(configs[workloads[0]]);
-    });
-};
-
-workerThread.composed = function(workloads, args) {
-    load('jstests/parallel/fsm_libs/worker_thread.js'); // for workerThread.main
-    load('jstests/parallel/fsm_libs/composer.js'); // for composer.run
-
-    return workerThread.main(workloads, args, function(configs) {
-        // TODO: make mixing probability configurable
-        composer.run(workloads, configs, 0.1);
-    });
-};
