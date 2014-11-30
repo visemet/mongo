@@ -13,7 +13,7 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.insert = function(db, collName) {
+    $config.states.insert = function insert(db, collName) {
         var doc = {};
         doc[this.indexedField] = this.indexedValue;
 

@@ -10,11 +10,11 @@ load('jstests/parallel/fsm_workloads/indexed_insert_text.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
     };
 
-    $config.data.getRandomTextSnippet = function() {
+    $config.data.getRandomTextSnippet = function getRandomTextSnippet() {
         var len = Random.randInt(5) + 1;  // ensure we always add some text, not just empty array
         var textArr = [];
         for (var i = 0; i < len; ++i) {

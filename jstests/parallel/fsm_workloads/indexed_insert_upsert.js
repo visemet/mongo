@@ -15,13 +15,13 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.counter = 0;
     };
 
-    $config.states.insert = function(db, collName) {
+    $config.states.insert = function insert(db, collName) {
         var doc = this.getDoc();
         doc.counter = this.counter++; // ensure doc is unique to guarantee an upsert occurs
 

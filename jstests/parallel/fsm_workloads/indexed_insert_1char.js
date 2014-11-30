@@ -12,7 +12,7 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         this.indexedValue = String.fromCharCode(33 + this.tid);

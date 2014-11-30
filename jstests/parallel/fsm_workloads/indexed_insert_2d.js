@@ -12,7 +12,7 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.states.init = function(db, collName) {
+    $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
         assertAlways.lt(this.tid, 1 << 16); // assume tid is a 16 bit nonnegative int
@@ -41,7 +41,7 @@ var $config = extendWorkload($config, function($config, $super) {
         this.indexedValue = [(evenBits - 128) / 2, (oddBits - 128) / 2];
     };
 
-    $config.data.getIndexSpec = function() {
+    $config.data.getIndexSpec = function getIndexSpec() {
         var ixSpec = {};
         ixSpec[this.indexedField] = '2d';
         return ixSpec;

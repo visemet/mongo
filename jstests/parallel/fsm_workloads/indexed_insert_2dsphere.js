@@ -12,7 +12,7 @@ load('jstests/parallel/fsm_workloads/indexed_insert_2d.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    $config.data.getIndexSpec = function() {
+    $config.data.getIndexSpec = function getIndexSpec() {
         var ixSpec = {};
         ixSpec[this.indexedField] = '2dsphere';
         return ixSpec;
