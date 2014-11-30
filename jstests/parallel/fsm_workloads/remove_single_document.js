@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * remove_single_document.js
  *

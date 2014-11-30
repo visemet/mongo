@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * rename_capped_collection_dbname_droptarget.js
  *

@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * create_capped_collection.js
  *

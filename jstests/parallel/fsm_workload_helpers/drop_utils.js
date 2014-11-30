@@ -1,3 +1,4 @@
+'use strict';
 
 /**
  * Helpers for dropping collections or databases created by a workload

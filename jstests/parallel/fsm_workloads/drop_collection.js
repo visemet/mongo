@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * drop_collection.js
  *

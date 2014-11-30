@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_insert_long_fieldname.js
  *

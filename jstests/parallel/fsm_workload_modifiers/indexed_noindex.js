@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_noindex.js
  *

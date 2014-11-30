@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * rename_collection_chain.js
  *

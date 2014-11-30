@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_insert_1char_noindex.js
  *

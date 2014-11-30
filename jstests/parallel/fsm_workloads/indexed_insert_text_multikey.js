@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * indexed_insert_text_multikey.js
  *

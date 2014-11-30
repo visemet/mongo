@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * map_reduce_merge.js
  *

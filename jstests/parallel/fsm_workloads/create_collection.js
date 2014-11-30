@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * create_collection.js
  *

@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * remove_multiple_documents.js
  *
