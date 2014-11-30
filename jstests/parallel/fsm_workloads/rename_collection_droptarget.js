@@ -76,10 +76,10 @@ var $config = (function() {
         rename: { rename: 1 }
     };
 
-    var teardown = function(db, collName) {
+    function teardown(db, collName) {
         var pattern = new RegExp('^' + this.prefix + '\\d+_\\d+$');
         dropCollections(db, pattern);
-    };
+    }
 
     return {
         threadCount: 20,
