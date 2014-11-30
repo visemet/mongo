@@ -7,6 +7,8 @@
  * command against it, specifying a different database name in the namespace.
  * The previous "to" namespace is used as the next "from" namespace.
  */
+load('jstests/parallel/fsm_workload_helpers/drop_utils.js'); // for dropDatabases
+
 var $config = (function() {
 
     var data = {
@@ -68,16 +70,8 @@ var $config = (function() {
     };
 
     var teardown = function(db, collName) {
-        var res = db.adminCommand('listDatabases');
-        assertAlways.commandWorked(res);
-
-        res.databases.forEach(function(dbInfo) {
-            if (dbInfo.name.startsWith(this.prefix)) {
-                var res = db.getSiblingDB(dbInfo.name).dropDatabase();
-                assertAlways.commandWorked(res);
-                assertAlways.eq(dbInfo.name, res.dropped);
-            }
-        }, this);
+        var pattern = new RegExp('^' + this.prefix + '\\d+_\\d+$');
+        dropDatabases(db, pattern);
     };
 
     return {

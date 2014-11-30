@@ -7,6 +7,8 @@
  * command against it. The previous "to" namespace is used as the next "from"
  * namespace.
  */
+load('jstests/parallel/fsm_workload_helpers/drop_utils.js'); // for dropCollections
+
 var $config = (function() {
 
     var data = {
@@ -47,13 +49,8 @@ var $config = (function() {
     };
 
     var teardown = function(db, collName) {
-        var pattern = new RegExp('^' + this.prefix);
-        var res = db.runCommand('listCollections', { filter: { name: pattern } });
-        assertAlways.commandWorked(res);
-
-        res.collections.forEach(function(collInfo) {
-            assertAlways(db[collInfo.name].drop());
-        });
+        var pattern = new RegExp('^' + this.prefix + '\\d+_\\d+$');
+        dropCollections(db, pattern);
     };
 
     return {
