@@ -13,7 +13,7 @@
  *
  * Writes the results of each thread to the same collection.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
+load('jstests/parallel/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {

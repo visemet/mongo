@@ -7,7 +7,7 @@
  * occurs once the collection reaches a certain size or contains a
  * certain number of documents.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
+load('jstests/parallel/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/create_capped_collection.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {

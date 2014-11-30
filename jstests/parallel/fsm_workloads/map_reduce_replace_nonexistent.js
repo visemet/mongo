@@ -10,7 +10,7 @@
  * Uses the "replace" action to write the results to a nonexistent
  * output collection.
  */
-load('jstests/parallel/fsm_libs/runner.js'); // for extendWorkload
+load('jstests/parallel/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/parallel/fsm_workloads/map_reduce_inline.js'); // for $config
 load('jstests/parallel/fsm_workload_helpers/drop_utils.js'); // for dropCollections
 
