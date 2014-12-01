@@ -17,9 +17,9 @@ var runner = (function() {
         ];
 
         Object.keys(mode).forEach(function(option) {
-            assert(0 <= allowedKeys.indexOf(option),
-                   'invalid option: ' + tojson(option) +
-                   '; valid options are: ' + tojson(allowedKeys));
+            assert.contains(option, allowedKeys,
+                            'invalid option: ' + tojson(option) +
+                            '; valid options are: ' + tojson(allowedKeys));
         });
 
         mode.composed = mode.composed || false;
@@ -34,10 +34,18 @@ var runner = (function() {
         return mode;
     }
 
+    /**
+     * Returns an array containing sets of workloads.
+     * Each set of workloads is executed together according to the execution mode.
+     *
+     * For example, returning [ [ workload1, workload2 ], [ workload2, workload3 ] ]
+     * when 'executionMode.parallel == true' causes workloads #1 and #2 to be
+     * executed simultaneously, followed by workloads #2 and #3 together.
+     */
     function scheduleWorkloads(workloads, executionMode) {
         if (!executionMode.composed && !executionMode.parallel) { // serial execution
             return workloads.map(function(workload) {
-                return [workload];
+                return [workload]; // run each workload by itself
             });
         }
 
@@ -177,6 +185,21 @@ var runner = (function() {
             clusterOptions.sameDB = true;
             clusterOptions.sameCollection = true;
         }
+
+        // Determine how strong to make assertions while simultaneously executing
+        // different workloads
+        var assertLevel = AssertLevel.OWN_DB;
+        if (clusterOptions.sameDB) {
+            // The database is shared by multiple workloads, so only make the asserts
+            // that apply when the collection is owned by an individual workload
+            assertLevel = AssertLevel.OWN_COLL;
+        }
+        if (clusterOptions.sameCollection) {
+            // The collection is shared by multiple workloads, so only make the asserts
+            // that always apply
+            assertLevel = AssertLevel.ALWAYS;
+        }
+        globalAssertLevel = assertLevel;
 
         var context = {};
         workloads.forEach(function(workload) {

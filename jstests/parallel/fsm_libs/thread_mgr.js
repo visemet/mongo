@@ -43,7 +43,7 @@ var ThreadManager = function(clusterOptions, executionMode) {
     this.init = function init(workloads, context, maxAllowedThreads) {
         assert.eq('number', typeof maxAllowedThreads,
                   'the maximum allowed threads must be a number');
-        assert.lt(0, maxAllowedThreads, 'the maximum allowed threads must be positive');
+        assert.gt(maxAllowedThreads, 0, 'the maximum allowed threads must be positive');
         assert.eq(maxAllowedThreads, Math.floor(maxAllowedThreads),
                   'the maximum allowed threads must be an integer');
 
@@ -58,23 +58,26 @@ var ThreadManager = function(clusterOptions, executionMode) {
             threadCounts[workload] = config.threadCount;
         });
 
-        var numThreads = computeNumThreads();
-        if (numThreads > maxAllowedThreads) {
+        var requestedNumThreads = computeNumThreads();
+        if (requestedNumThreads > maxAllowedThreads) {
             // Scale down the requested '$config.threadCount' values to make
             // them sum to less than 'maxAllowedThreads'
-            var factor = maxAllowedThreads / numThreads;
+            var factor = maxAllowedThreads / requestedNumThreads;
             workloads.forEach(function(workload) {
                 var threadCount = threadCounts[workload];
                 threadCount = Math.floor(factor * threadCount);
                 threadCount = Math.max(1, threadCount); // ensure workload is executed
                 threadCounts[workload] = threadCount;
             });
-
-            numThreads = computeNumThreads();
         }
 
+        var numThreads = computeNumThreads();
         assert.lte(numThreads, maxAllowedThreads);
         latch = new CountDownLatch(numThreads);
+
+        var plural = numThreads === 1 ? '' : 's';
+        print('Using ' + numThreads + ' thread' + plural +
+              ' (requested ' + requestedNumThreads + ')');
 
         _workloads = workloads;
         _context = context;
@@ -89,9 +92,9 @@ var ThreadManager = function(clusterOptions, executionMode) {
 
         var tid = 0;
         _workloads.forEach(function(workload) {
-            var workloads = [workload];
+            var workloads = [workload]; // worker thread only needs to load 'workload'
             if (executionMode.composed) {
-                workloads = _workloads;
+                workloads = _workloads; // worker thread needs to load all workloads
             }
 
             var config = _context[workload].config;

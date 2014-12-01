@@ -19,18 +19,20 @@ var Cluster = function(options) {
     ];
 
     Object.keys(options).forEach(function(option) {
-        assert(0 <= allowedKeys.indexOf(option),
-               'invalid option: ' + tojson(option) +
-               '; valid options are: ' + tojson(allowedKeys));
+        assert.contains(option, allowedKeys,
+                        'invalid option: ' + tojson(option) +
+                        '; valid options are: ' + tojson(allowedKeys));
     });
 
     var conn;
 
+    var initialized = false;
+
     this.setup = function setup() {
         var verbosityLevel = 1;
 
-        if (typeof conn !== 'undefined') {
-            return; // setup was already called
+        if (initialized) {
+            throw new Error('cluster has already been initialized');
         }
 
         if (options.sharded) {
@@ -101,25 +103,34 @@ var Cluster = function(options) {
             db.adminCommand({ setParameter: 1, logLevel: verbosityLevel });
         }
 
+        initialized = true;
     };
 
     this.teardown = function teardown() { };
 
     this.getDB = function getDB(dbName) {
+        if (!initialized) {
+            throw new Error('cluster has not been initialized yet');
+        }
+
         return conn.getDB(dbName);
     };
 
     this.getHost = function getHost() {
+        if (!initialized) {
+            throw new Error('cluster has not been initialized yet');
+        }
+
         return conn.host;
     };
 
     this.isSharded = function isSharded() {
-        return options.sharded || false;
+        return !!options.sharded;
     };
 
     this.shardCollection = function shardCollection() {
         assert(this.isSharded(), 'cluster is not sharded');
-        throw new Error('cluster is not initialized yet');
+        throw new Error('cluster has not been initialized yet');
     };
 };
 

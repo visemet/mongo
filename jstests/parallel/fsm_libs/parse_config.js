@@ -4,8 +4,8 @@
 // Normalized means all optional parameters are set to their default values,
 // and any parameters that need to be coerced have been coerced.
 function parseConfig(config) {
-    // make a deep copy so we can mutate config without surprising the caller
-    config = Object.extend({}, config, true);
+    config = Object.extend({}, config, true); // defensive deep copy
+
     var allowedKeys = [
         'data',
         'iterations',
@@ -16,10 +16,11 @@ function parseConfig(config) {
         'threadCount',
         'transitions'
     ];
-    Object.keys(config).forEach(function(k) {
-        assert.gte(allowedKeys.indexOf(k), 0,
-                   'invalid config parameter: ' + k + '; valid parameters are: ' +
-                   tojson(allowedKeys));
+
+    Object.keys(config).forEach(function(key) {
+        assert.contains(key, allowedKeys,
+                       'invalid config parameter: ' + key +
+                       '; valid parameters are: ' + tojson(allowedKeys));
     });
 
     assert.eq('number', typeof config.threadCount);
