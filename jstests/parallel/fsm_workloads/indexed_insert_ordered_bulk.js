@@ -23,7 +23,9 @@ var $config = extendWorkload($config, function($config, $super) {
         for (var i = 0; i < this.docsPerInsert; ++i) {
             bulk.insert(doc);
         }
-        assertWhenOwnColl.writeOK(bulk.execute());
+        var res = bulk.execute();
+        assertAlways.writeOK(res);
+        assertAlways.eq(this.docsPerInsert, res.nInserted, tojson(res));
 
         this.nInserted += this.docsPerInsert;
     };

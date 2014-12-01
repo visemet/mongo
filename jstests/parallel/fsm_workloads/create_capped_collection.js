@@ -32,6 +32,8 @@ var $config = (function() {
         var doc = makeDocWithSize(targetSize);
 
         var res = db[collName].insert(doc);
+        // assuming no unique index constraints on the inserted doc
+        assertAlways.writeOK(res);
         assertAlways.eq(1, res.nInserted);
 
         return doc._id;

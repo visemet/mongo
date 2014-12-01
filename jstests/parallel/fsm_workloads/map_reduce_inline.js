@@ -90,6 +90,7 @@ var $config = (function() {
         }
 
         var res = bulk.execute();
+        // assuming no unique index constraints on the inserted doc
         assertAlways.writeOK(res);
         assertAlways.eq(this.numDocs, res.nInserted);
     }

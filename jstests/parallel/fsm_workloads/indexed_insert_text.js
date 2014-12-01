@@ -16,6 +16,8 @@ var $config = (function() {
             var doc = {};
             doc[this.indexedField] = this.getRandomTextSnippet();
             var res = db[collName].insert(doc);
+            // assuming no unique index constraints on the inserted doc
+            assertAlways.writeOK(res);
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
 

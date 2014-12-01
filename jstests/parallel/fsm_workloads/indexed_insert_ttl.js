@@ -13,11 +13,15 @@ var $config = (function() {
     var states = {
         init: function init(db, collName) {
             var res = db[collName].insert({ indexed_insert_ttl: new ISODate(), first: true });
+            // assuming no unique index constraints on the inserted doc
+            assertAlways.writeOK(res);
             assertWhenOwnColl.eq(1, res.nInserted, tojson(res));
         },
 
         insert: function insert(db, collName) {
             var res = db[collName].insert({ indexed_insert_ttl: new ISODate() });
+            // assuming no unique index constraints on the inserted doc
+            assertAlways.writeOK(res);
             assertWhenOwnColl.eq(1, res.nInserted, tojson(res));
         }
     };
