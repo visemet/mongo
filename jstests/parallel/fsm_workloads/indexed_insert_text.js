@@ -14,7 +14,7 @@ var $config = (function() {
 
         insert: function insert(db, collName) {
             var snippet = this.getRandomTextSnippet();
-            var res = db[collName].insert({ v: snippet });
+            var res = db[collName].insert({ 'indexed_insert_text': snippet });
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
 
@@ -34,7 +34,7 @@ var $config = (function() {
     };
 
     function setup(db, collName) {
-        db[collName].ensureIndex({ v: 'text' });
+        db[collName].ensureIndex({ 'indexed_insert_text': 'text' });
     }
 
     var text = [
