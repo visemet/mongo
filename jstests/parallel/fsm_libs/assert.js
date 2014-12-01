@@ -38,7 +38,7 @@ var AssertLevel = (function() {
 })();
 
 if (typeof globalAssertLevel === 'undefined') {
-    var globalAssertLevel = AssertLevel.ALWAYS;
+    var globalAssertLevel = AssertLevel.OWN_DB;
 }
 
 var assertWithLevel = function(level) {
