@@ -45,9 +45,14 @@ var $config = (function() {
             var count = db[collName].find(this.getDoc()).sort({ $natural: 1 }).itcount();
             assertWhenOwnColl.eq(count, this.nInserted);
 
-            // Use hint() to force an index scan, but only when an appropriate index exists
-            if (this.indexExists) {
-                count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
+            // Use hint() to force an index scan, but only when an appropriate index exists.
+            // We can only use hint() when the index exists and we know that the collection
+            // is not being potentially modified by other workloads.
+            var ownColl = false;
+            assertWhenOwnColl(function() { ownColl = true; });
+            if (this.indexExists && ownColl) {
+                var count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
+                assertWhenOwnColl.eq(count, this.nInserted);
             }
 
             // Otherwise, impose a sort ordering over the collection scan
@@ -56,9 +61,8 @@ var $config = (function() {
                 // valid sort spec; however, for geospatial and text indexes it is not
                 var sort = makeSortSpecFromIndexSpec(this.getIndexSpec());
                 count = db[collName].find(this.getDoc()).sort(sort).itcount();
+                assertWhenOwnColl.eq(count, this.nInserted);
             }
-
-            assertWhenOwnColl.eq(count, this.nInserted);
         }
     };
 

@@ -13,8 +13,12 @@ var $config = (function() {
         },
 
         insert: function insert(db, collName) {
+            assertAlways.contains(this.indexedField + '_text',
+                                  db[collName].getIndexes().map(function(ix) { return ix.name; }));
+            var doc = {};
             var snippet = this.getRandomTextSnippet();
-            var res = db[collName].insert({ v: snippet });
+            doc[this.indexedField] = snippet;
+            var res = db[collName].insert(doc);
             assertAlways.eq(1, res.nInserted, tojson(res));
             // TODO: what else can we assert? should that go in a read test?
 
@@ -34,7 +38,9 @@ var $config = (function() {
     };
 
     function setup(db, collName) {
-        db[collName].ensureIndex({ v: 'text' });
+        var ixSpec = {};
+        ixSpec[this.indexedField] = 'text';
+        assertAlways.commandWorked(db[collName].ensureIndex(ixSpec));
     }
 
     var text = [
@@ -114,6 +120,7 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: {
+            indexedField: 'indexed_insert_text',
             getRandomTextSnippet: function getRandomTextSnippet() {
                 return this.text[Random.randInt(this.text.length)];
             },

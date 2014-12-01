@@ -15,6 +15,8 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
+    $config.data.indexedField = 'indexed_insert_upsert';
+
     $config.states.init = function init(db, collName) {
         $super.states.init.apply(this, arguments);
 
@@ -24,6 +26,7 @@ var $config = extendWorkload($config, function($config, $super) {
     $config.states.insert = function insert(db, collName) {
         var doc = this.getDoc();
         doc.counter = this.counter++; // ensure doc is unique to guarantee an upsert occurs
+        doc._id = ObjectId(); // _id is required for shard targeting
 
         var res = db[collName].update(doc, { $inc: { unused: 0 } }, { upsert: true });
         assertAlways.eq(0, res.nMatched, tojson(res));
