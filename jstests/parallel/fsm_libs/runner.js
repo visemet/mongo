@@ -34,6 +34,55 @@ var runner = (function() {
         return mode;
     }
 
+    function validateExecutionOptions(mode, options) {
+        options = Object.extend({}, options, true); // defensive deep copy
+
+        var allowedKeys = [];
+        if (mode.parallel || mode.composed) {
+            allowedKeys.push('numSubsets');
+            allowedKeys.push('subsetSize');
+        }
+        if (mode.composed) {
+            allowedKeys.push('composeProb');
+            allowedKeys.push('iterations');
+        }
+
+        Object.keys(options).forEach(function(option) {
+            assert.contains(option, allowedKeys,
+                            'invalid option: ' + tojson(option) +
+                            '; valid options are: ' + tojson(allowedKeys));
+        });
+
+        if (typeof options.subsetSize !== 'undefined') {
+            assert.eq('number', typeof options.subsetSize);
+            assert.gt(options.subsetSize, 1);
+            assert.eq(options.subsetSize, Math.floor(options.subsetSize),
+                      'expected subset size to be an integer');
+        }
+
+        if (typeof options.numSubsets !== 'undefined') {
+            assert.eq('number', typeof options.numSubsets);
+            assert.gt(options.numSubsets, 0);
+            assert.eq(options.numSubsets, Math.floor(options.numSubsets),
+                      'expected number of subsets to be an integer');
+        }
+
+        if (typeof options.iterations !== 'undefined') {
+            assert.eq('number', typeof options.iterations);
+            assert.gt(options.iterations, 0);
+            assert.eq(options.iterations, Math.floor(options.iterations),
+                      'expected number of iterations to be an integer');
+        }
+
+        if (typeof options.composeProb !== 'undefined') {
+            assert.eq('number', typeof options.composeProb);
+            assert.gt(options.composeProb, 0);
+            assert.lte(options.composeProb, 1);
+        }
+
+        return options;
+    }
+
     /**
      * Returns an array containing sets of workloads.
      * Each set of workloads is executed together according to the execution mode.
@@ -42,15 +91,56 @@ var runner = (function() {
      * when 'executionMode.parallel == true' causes workloads #1 and #2 to be
      * executed simultaneously, followed by workloads #2 and #3 together.
      */
-    function scheduleWorkloads(workloads, executionMode) {
+    function scheduleWorkloads(workloads, executionMode, executionOptions) {
         if (!executionMode.composed && !executionMode.parallel) { // serial execution
             return workloads.map(function(workload) {
                 return [workload]; // run each workload by itself
             });
         }
 
-        // TODO: return an array of random subsets
-        return [workloads];
+        var schedule = [];
+
+        // Take 'numSubsets' random subsets of the workloads, each
+        // of size 'subsetSize'. Each workload must get scheduled
+        // once before any workload can be scheduled again.
+        var subsetSize = executionOptions.subsetSize || 10;
+
+        // If the number of subsets is not specified, then have each
+        // workload get scheduled 2 to 3 times.
+        var numSubsets = executionOptions.numSubsets;
+        if (!numSubsets) {
+            numSubsets = Math.ceil(2.5 * workloads.length / subsetSize);
+        }
+
+        workloads = workloads.slice(0); // copy
+        workloads = Array.shuffle(workloads);
+
+        var start = 0;
+        var end = subsetSize;
+
+        while (schedule.length < numSubsets) {
+            schedule.push(workloads.slice(start, end));
+
+            start = end;
+            end += subsetSize;
+
+            // Check if there are not enough elements remaining in
+            // 'workloads' to make a subset of size 'subsetSize'.
+            if (end > workloads.length) {
+                // Re-shuffle the beginning of the array, and prepend it
+                // with the workloads that have not been scheduled yet.
+                var temp = Array.shuffle(workloads.slice(0, start));
+                for (var i = workloads.length - 1; i >= start; --i) {
+                    temp.unshift(workloads[i]);
+                }
+                workloads = temp;
+
+                start = 0;
+                end = subsetSize;
+            }
+        }
+
+        return schedule;
     }
 
     function prepareCollections(workloads, context, cluster, clusterOptions) {
@@ -191,10 +281,11 @@ var runner = (function() {
         config.teardown.call(config.data, myDB, collName);
     }
 
-    function runWorkloads(workloads, clusterOptions, executionMode) {
+    function runWorkloads(workloads, clusterOptions, executionMode, executionOptions) {
         assert.gt(workloads.length, 0, 'need at least one workload to run');
 
         executionMode = validateExecutionMode(executionMode);
+        executionOptions = validateExecutionOptions(executionMode, executionOptions);
 
         clusterOptions = Object.extend({}, clusterOptions, true); // defensive deep copy
         if (executionMode.composed) {
@@ -237,7 +328,7 @@ var runner = (function() {
         Random.setRandomSeed(clusterOptions.seed);
 
         try {
-            var schedule = scheduleWorkloads(workloads, executionMode);
+            var schedule = scheduleWorkloads(workloads, executionMode, executionOptions);
             schedule.forEach(function(workloads) {
                 var cleanup = [];
                 var errors = [];
@@ -254,7 +345,7 @@ var runner = (function() {
                     });
 
                     threadMgr.init(workloads, context, maxAllowedConnections);
-                    threadMgr.spawnAll(cluster.getHost());
+                    threadMgr.spawnAll(cluster.getHost(), executionOptions);
                     threadMgr.checkFailed(0.2);
 
                     errors = threadMgr.joinAll();
@@ -286,16 +377,19 @@ var runner = (function() {
     }
 
     return {
-        serial: function serial(workloads, clusterOptions) {
-            runWorkloads(workloads, clusterOptions, {});
+        serial: function serial(workloads, clusterOptions, executionOptions) {
+            executionOptions = executionOptions || {};
+            runWorkloads(workloads, clusterOptions, {}, executionOptions;
         },
 
-        parallel: function parallel(workloads, clusterOptions) {
-            runWorkloads(workloads, clusterOptions, { parallel: true });
+        parallel: function parallel(workloads, clusterOptions, executionOptions) {
+            executionOptions = executionOptions || {};
+            runWorkloads(workloads, clusterOptions, { parallel: true }, executionOptions);
         },
 
-        composed: function composed(workloads, clusterOptions) {
-            runWorkloads(workloads, clusterOptions, { composed: true });
+        composed: function composed(workloads, clusterOptions, executionOptions) {
+            executionOptions = executionOptions || {};
+            runWorkloads(workloads, clusterOptions, { composed: true }, executionOptions);
         }
     };
 
