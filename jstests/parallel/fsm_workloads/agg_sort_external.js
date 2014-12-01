@@ -14,10 +14,16 @@ var $config = extendWorkload($config, function($config, $super) {
     // use enough docs to exceed 100MB, the in-memory limit for $sort and $group
     $config.data.numDocs = 24 * 1000;
     var MB = 1024 * 1024; // bytes
+    // assert that *half* the docs exceed the in-memory limit, because the $match stage will only
+    // pass half the docs in the collection on to the $sort stage.
     assertAlways.lte(100 * MB, $config.data.numDocs * $config.data.docSize / 2);
 
+    $config.data.getOutputCollPrefix = function(collName) {
+        return collName + '_out_agg_sort_external_';
+    };
+
     $config.states.query = function(db, collName) {
-        var otherCollName = collName + '_out_agg_sort_external_' + this.tid;
+        var otherCollName = this.getOutputCollPrefix(collName) + this.tid;
         var cursor = db[collName].aggregate([
             { $match: { flag: true } },
             { $sort: { rand: 1 } },
@@ -26,9 +32,18 @@ var $config = extendWorkload($config, function($config, $super) {
             allowDiskUse: true
         });
         assertAlways.eq(0, cursor.itcount());
-        // .count() might be wrong with sharding because SERVER-3645
-        assertWhenOwnColl.eq(db[collName].count()/2, db[otherCollName].count());
-        assertWhenOwnColl.eq(db[collName].find().itcount()/2, db[otherCollName].find().itcount());
+        assertWhenOwnColl.eq(db[collName].find().itcount() / 2, db[otherCollName].find().itcount());
+    };
+
+    $config.teardown = function(db, collName) {
+        $super.teardown.apply(this, arguments);
+
+        var prefix = this.getOutputCollPrefix(collName);
+        db.getCollectionNames().forEach(function(cn) {
+            if (cn.startsWith(prefix)) {
+                assertWhenOwnColl(db[cn].drop());
+            }
+        });
     };
 
     return $config;

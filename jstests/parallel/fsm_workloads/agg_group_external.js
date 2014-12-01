@@ -14,10 +14,15 @@ var $config = extendWorkload($config, function($config, $super) {
     // use enough docs to exceed 100MB, the in-memory limit for $sort and $group
     $config.data.numDocs = 24 * 1000;
     var MB = 1024 * 1024; // bytes
-    assertAlways.lte(100 * MB, $config.data.numDocs * $config.data.docSize / 2);
+    assertAlways.lte(100 * MB, $config.data.numDocs * $config.data.docSize);
+
+    // assume no other workload will manipulate collections with this prefix
+    $config.data.getOutputCollPrefix = function(collName) {
+        return collName + '_out_agg_group_external_';
+    };
 
     $config.states.query = function(db, collName) {
-        var otherCollName = collName + '_out_agg_sort_external_' + this.tid;
+        var otherCollName = this.getOutputCollPrefix(collName) + this.tid;
         var cursor = db[collName].aggregate([
             { $group: { _id: '$randInt', count: { $sum: 1 } } },
             { $out: otherCollName }
@@ -32,6 +37,18 @@ var $config = extendWorkload($config, function($config, $super) {
             ]).toArray()[0].totalCount;
             assertWhenOwnColl.eq(this.numDocs, sum);
         }.bind(this));
+    };
+
+    $config.teardown = function teardown(db, collName) {
+        $super.teardown.apply(this, arguments);
+
+        // drop all collections with this workload's assumed-to-be-unique prefix
+        var prefix = this.getOutputCollPrefix(collName);
+        db.getCollectionNames().forEach(function(cn) {
+            if (cn.startsWith(prefix)) {
+                assertWhenOwnColl(db[cn].drop());
+            }
+        });
     };
 
     return $config;

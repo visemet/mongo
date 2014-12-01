@@ -8,8 +8,13 @@ load('jstests/parallel/fsm_workloads/agg_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
+    $config.data.getOutCollName = function(collName) {
+        return collName + '_out_agg_match';
+    };
+
     $config.states.query = function(db, collName) {
-        var otherCollName = collName + '_out_agg_base';
+        // note that all threads output to the same collection
+        var otherCollName = this.getOutCollName(collName);
         var cursor = db[collName].aggregate([
             { $match: { flag: true } },
             { $out: otherCollName }
@@ -20,6 +25,12 @@ var $config = extendWorkload($config, function($config, $super) {
         // I don't want to create a cursor that could be invalidated if the collection is replaced
         // while I'm iterating.
         assertWhenOwnColl.eq(db[collName].count() / 2, db[otherCollName].count());
+    };
+
+    $config.teardown = function(db, collName) {
+        $super.teardown.apply(this, arguments);
+
+        assertWhenOwnColl(db[this.getOutCollName(collName)].drop());
     };
 
     return $config;

@@ -9,17 +9,30 @@ load('jstests/parallel/fsm_workloads/agg_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
+    $config.data.getOutputCollPrefix = function(collName) {
+        return collName + '_out_agg_sort_';
+    };
+
     $config.states.query = function(db, collName) {
-        var otherCollName = collName + '_out_agg_sort_' + this.tid;
+        var otherCollName = this.getOutputCollPrefix(collName) + this.tid;
         var cursor = db[collName].aggregate([
             { $match: { flag: true } },
             { $sort: { rand: 1 } },
             { $out: otherCollName }
         ]);
         assertAlways.eq(0, cursor.itcount());
-        // .count() might be wrong with sharding because SERVER-3645
-        assertWhenOwnColl.eq(db[collName].count()/2, db[otherCollName].count());
-        assertWhenOwnColl.eq(db[collName].find().itcount()/2, db[otherCollName].find().itcount());
+        assertWhenOwnColl.eq(db[collName].find().itcount() / 2, db[otherCollName].find().itcount());
+    };
+
+    $config.teardown = function(db, collName) {
+        $super.teardown.apply(this, arguments);
+
+        var prefix = this.getOutputCollPrefix(collName);
+        db.getCollectionNames().forEach(function(cn) {
+            if (cn.startsWith(prefix)) {
+                assertWhenOwnColl(db[cn].drop());
+            }
+        });
     };
 
     return $config;

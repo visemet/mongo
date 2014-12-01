@@ -9,9 +9,9 @@ var $config = (function() {
     var data = {
         numDocs: 1000,
         // Use 12KB documents by default. This number is useful because 12,000 documents each of
-        // size 12KB take up more than 100MB in total, an 100MB is the in-memory limit for $sort and
-        // $group.
-        docSize: 12*1000
+        // size 12KB take up more than 100MB in total, and 100MB is the in-memory limit for $sort
+        // and $group.
+        docSize: 12 * 1000
     };
 
     var getStringOfLength = (function() {
@@ -23,11 +23,14 @@ var $config = (function() {
             return cache[size];
         }
     })();
+
     function padDoc(doc, size) {
+        // first set doc.padding so that Object.bsonsize will include the field name and other
+        // overhead
         doc.padding = "";
         var paddingLength = size - Object.bsonsize(doc);
         assertAlways.lte(0, paddingLength,
-                   "document is already bigger than " + size + ": " + tojson(doc));
+                         'document is already bigger than ' + size + ': ' + tojson(doc));
         doc.padding = getStringOfLength(paddingLength);
         assertAlways.eq(size, Object.bsonsize(doc));
         return doc;
@@ -50,13 +53,9 @@ var $config = (function() {
 
     function setup(db, collName) {
         // load example data
-        // TODO: we also test bulk ops separately, but agg will run first because of alphabetical
-        // order.
-        //  - don't use bulk ops here?
-        //  - fix the execution order?
         var bulk = db[collName].initializeUnorderedBulkOp();
         for (var i = 0; i < this.numDocs; ++i) {
-            // note: padDoc caches the large string after allocating it once, so it's ok to call
+            // note: padDoc caches the large string after allocating it once, so it's ok to call it
             // in this loop
             bulk.insert(padDoc({
                 flag: i % 2 ? true : false,
@@ -72,6 +71,10 @@ var $config = (function() {
         assertWhenOwnColl.eq(this.numDocs / 2, db[collName].find({ flag: true }).itcount());
     }
 
+    function teardown(db, collName) {
+        assertWhenOwnColl(db[collName].drop());
+    }
+
     return {
         // using few threads and iterations because each operation is fairly expensive:
         // a collection scan with more data than most other workloads
@@ -80,6 +83,7 @@ var $config = (function() {
         states: states,
         transitions: transitions,
         data: data,
-        setup: setup
+        setup: setup,
+        teardown: teardown
     };
 })();
