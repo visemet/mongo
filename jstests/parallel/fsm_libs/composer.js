@@ -4,11 +4,17 @@ load('jstests/parallel/fsm_libs/fsm.js');
 
 var composer = (function() {
 
-    function runCombinedFSM(workloads, configs, composeProb) {
+    function runCombinedFSM(workloads, configs, options) {
         assert.lte(2, workloads.length, 'need at least two FSMs to compose');
 
-        // TODO: what if a workload depends on iterations?
-        var iterations = 100;
+        var composeProb = options.composeProb;
+        if (typeof composeProb === 'undefined') {
+            composeProb = 0.1;
+        }
+
+        // TODO: use a different default number of iterations?
+        //       e.g. take the sum of the 'iterations' specified in each workload's config
+        var iterations = options.iterations || 100;
 
         assert.eq(AssertLevel.ALWAYS, globalAssertLevel,
                   'global assertion level is not set as ALWAYS');

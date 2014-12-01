@@ -12,13 +12,13 @@ var ThreadManager = function(clusterOptions, executionMode) {
         return new ThreadManager(clusterOptions, executionMode);
     }
 
-    function makeThread(workloads, args) {
+    function makeThread(workloads, args, options) {
         // Wrap the execution of 'threadFn' in a try/finally block
         // to ensure that the database connection implicitly created
         // within the thread's scope is closed.
-        var guardedThreadFn = function(threadFn, workloads, args) {
+        var guardedThreadFn = function(threadFn, workloads, args, options) {
             try {
-                return threadFn(workloads, args);
+                return threadFn(workloads, args, options);
             } finally {
                 db = null;
                 gc();
@@ -26,10 +26,12 @@ var ThreadManager = function(clusterOptions, executionMode) {
         };
 
         if (executionMode.composed) {
-            return new ScopedThread(guardedThreadFn, workerThread.composed, workloads, args);
+            return new ScopedThread(guardedThreadFn, workerThread.composed,
+                                    workloads, args, options);
         }
 
-        return new ScopedThread(guardedThreadFn, workerThread.fsm, workloads, args);
+        return new ScopedThread(guardedThreadFn, workerThread.fsm,
+                                workloads, args, options);
     }
 
     var latch;
@@ -85,7 +87,7 @@ var ThreadManager = function(clusterOptions, executionMode) {
         initialized = true;
     };
 
-    this.spawnAll = function spawnAll(host) {
+    this.spawnAll = function spawnAll(host, options) {
         if (!initialized) {
             throw new Error('thread manager has not been initialized yet');
         }
@@ -112,7 +114,7 @@ var ThreadManager = function(clusterOptions, executionMode) {
                     globalAssertLevel: globalAssertLevel
                 };
 
-                var t = makeThread(workloads, args);
+                var t = makeThread(workloads, args, options);
                 threads.push(t);
                 t.start();
             }
@@ -176,7 +178,7 @@ var ThreadManager = function(clusterOptions, executionMode) {
  * workload and a composition of them, respectively.
  */
 
-workerThread.fsm = function(workloads, args) {
+workerThread.fsm = function(workloads, args, options) {
     load('jstests/parallel/fsm_libs/worker_thread.js'); // for workerThread.main
     load('jstests/parallel/fsm_libs/fsm.js'); // for fsm.run
 
@@ -187,12 +189,11 @@ workerThread.fsm = function(workloads, args) {
     });
 };
 
-workerThread.composed = function(workloads, args) {
+workerThread.composed = function(workloads, args, options) {
     load('jstests/parallel/fsm_libs/worker_thread.js'); // for workerThread.main
     load('jstests/parallel/fsm_libs/composer.js'); // for composer.run
 
     return workerThread.main(workloads, args, function(configs) {
-        // TODO: make mixing probability configurable
-        composer.run(workloads, configs, 0.1);
+        composer.run(workloads, configs, options);
     });
 };
