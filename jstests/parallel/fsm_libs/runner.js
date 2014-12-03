@@ -57,10 +57,6 @@ var runner = (function() {
         var dbName, collName, myDB;
         var firstWorkload = true;
 
-        // Clean up the state left behind by other tests in the parallel suite
-        // to avoid having too many open files
-        db.dropDatabase();
-
         workloads.forEach(function(workload) {
             if (firstWorkload || !clusterOptions.sameCollection) {
                 if (firstWorkload || !clusterOptions.sameDB) {
@@ -83,6 +79,26 @@ var runner = (function() {
 
             firstWorkload = false;
         });
+    }
+
+    function cleanupWorkloadData(workloads, context, clusterOptions) {
+        // If no other workloads will be using this collection,
+        // then drop it to avoid having too many files open
+        if (!clusterOptions.sameCollection) {
+            workloads.forEach(function(workload) {
+                var config = context[workload];
+                config.db[config.collName].drop();
+            });
+        }
+
+        // If no other workloads will be using this database,
+        // then drop it to avoid having too many files open
+        if (!clusterOptions.sameDB) {
+            workloads.forEach(function(workload) {
+                var config = context[workload];
+                config.db.dropDatabase();
+            });
+        }
     }
 
     function throwError(workerErrs) {
@@ -208,6 +224,10 @@ var runner = (function() {
             context[workload] = { config: parseConfig($config) };
         });
 
+        // Clean up the state left behind by other tests in the parallel suite
+        // to avoid having too many open files
+        db.dropDatabase();
+
         var threadMgr = new ThreadManager(clusterOptions, executionMode);
 
         var cluster = new Cluster(clusterOptions);
@@ -225,9 +245,9 @@ var runner = (function() {
 
                 jsTest.log(workloads.join('\n'));
 
-                try {
-                    prepareCollections(workloads, context, cluster, clusterOptions);
+                prepareCollections(workloads, context, cluster, clusterOptions);
 
+                try {
                     workloads.forEach(function(workload) {
                         setupWorkload(workload, context);
                         cleanup.push(workload);
@@ -247,6 +267,11 @@ var runner = (function() {
                             teardownFailed = true;
                         }
                     });
+                }
+
+                // Only drop the collections/databases if all the workloads ran successfully
+                if (!errors.length && !teardownFailed) {
+                    cleanupWorkloadData(workloads, context, clusterOptions);
                 }
 
                 throwError(errors);
