@@ -12,12 +12,12 @@ var $config = (function() {
 
     var states = {
         init: function init(db, collName) {
-            var res = db[collName].insert({ t: new ISODate(), first: true });
+            var res = db[collName].insert({ 'indexed_insert_ttl': new ISODate(), first: true });
             assertWhenOwnColl.eq(1, res.nInserted, tojson(res));
         },
 
         insert: function insert(db, collName) {
-            var res = db[collName].insert({ t: new ISODate() });
+            var res = db[collName].insert({ 'indexed_insert_ttl': new ISODate() });
             assertWhenOwnColl.eq(1, res.nInserted, tojson(res));
         }
     };
@@ -28,7 +28,7 @@ var $config = (function() {
     };
 
     function setup(db, collName) {
-        db[collName].ensureIndex({ t: 1 }, { expireAfterSeconds: this.ttlSeconds });
+        db[collName].ensureIndex({ 'indexed_insert_ttl': 1 }, { expireAfterSeconds: this.ttlSeconds });
     }
 
     function teardown(db, collName) {

@@ -18,14 +18,14 @@ var $config = extendWorkload($config, function($config, $super) {
 
     $config.data.getDoc = function getDoc() {
         return {
-            x: this.tid & 0x0f, // lowest 4 bits
-            y: this.tid >> 4,   // high bits
-            z: String.fromCharCode(33 + this.tid)
+            compound_x: this.tid & 0x0f, // lowest 4 bits
+            compound_y: this.tid >> 4,   // high bits
+            compound_z: String.fromCharCode(33 + this.tid)
         };
     };
 
     $config.data.getIndexSpec = function getIndexSpec() {
-        return { x: 1, y: 1, z: 1 };
+        return { compound_x: 1, compound_y: 1, compound_z: 1 };
     };
 
     return $config;

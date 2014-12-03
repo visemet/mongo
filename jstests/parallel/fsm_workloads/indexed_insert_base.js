@@ -47,7 +47,11 @@ var $config = (function() {
 
             // Use hint() to force an index scan, but only when an appropriate index exists
             if (this.indexExists) {
-                count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
+                assertWhenOwnColl((function() {
+                    var count = db[collName].find(this.getDoc())
+                                            .hint(this.getIndexSpec()).itcount();
+                    assertWhenOwnColl.eq(count, this.nInserted);
+                }).bind(this));
             }
 
             // Otherwise, impose a sort ordering over the collection scan
@@ -56,9 +60,8 @@ var $config = (function() {
                 // valid sort spec; however, for geospatial and text indexes it is not
                 var sort = makeSortSpecFromIndexSpec(this.getIndexSpec());
                 count = db[collName].find(this.getDoc()).sort(sort).itcount();
+                assertWhenOwnColl.eq(count, this.nInserted);
             }
-
-            assertWhenOwnColl.eq(count, this.nInserted);
         }
     };
 
