@@ -10,7 +10,6 @@ var blacklist = [
     'map_reduce_reduce_nonatomic.js' // SERVER-16262
 ].map(function(file) { return dir + '/' + file; });
 
-// SERVER-16196 re-enable executing workloads
-// runCompositionOfWorkloads(ls(dir).filter(function(file) {
-//     return !Array.contains(blacklist, file);
-// }));
+runCompositionOfWorkloads(ls(dir).filter(function(file) {
+    return !Array.contains(blacklist, file);
+}));
