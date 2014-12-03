@@ -13,7 +13,9 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 var $config = extendWorkload($config, function($config, $super) {
 
     // TODO: make this field name even longer?
-    $config.data.indexedField = 'indexed_insert_long_fieldname_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    var length = 100;
+    var prefix = 'indexed_insert_long_fieldname_';
+    $config.data.indexedField = prefix + new Array(length - prefix.length + 1).join('x');
 
     return $config;
 });

@@ -14,6 +14,8 @@ var $config = extendWorkload($config, function($config, $super) {
         $super.states.init.apply(this, arguments);
     };
 
+    $config.data.indexedField = 'indexed_insert_text_multikey';
+
     $config.data.getRandomTextSnippet = function getRandomTextSnippet() {
         var len = Random.randInt(5) + 1;  // ensure we always add some text, not just empty array
         var textArr = [];
