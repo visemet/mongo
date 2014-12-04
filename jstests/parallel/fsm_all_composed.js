@@ -24,7 +24,7 @@ var whitelist = [
 //    'jstests/parallel/fsm_workloads/map_reduce_inline.js',
 //    'jstests/parallel/fsm_workloads/indexed_insert_text_multikey.js',
 //    'jstests/parallel/fsm_workloads/indexed_insert_long_fieldname_noindex.js',
-//    'jstests/parallel/fsm_workloads/findAndModify_inc.js',
+    'jstests/parallel/fsm_workloads/findAndModify_inc.js',
 ];
 
 runCompositionOfWorkloads(whitelist, {}, { numSubsets: 1 });
