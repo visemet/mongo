@@ -29,7 +29,7 @@ var Cluster = function(options) {
     var initialized = false;
 
     this.setup = function setup() {
-        var verbosityLevel = 1;
+        var verbosityLevel = 0;
 
         if (initialized) {
             throw new Error('cluster has already been initialized');
