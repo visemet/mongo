@@ -376,7 +376,7 @@ var runner = (function() {
         },
 
         parallel: function parallel(workloads, clusterOptions) {
-            runWorkloads(workloads, clusterOptions, { parallel: true }, {});
+            runWorkloads(workloads, clusterOptions, { parallel: true }, { numSubsets: 1 });
         },
 
         composed: function composed(workloads, clusterOptions, executionOptions) {
