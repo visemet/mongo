@@ -15,7 +15,7 @@ var blacklist = [
 // }));
 
 var whitelist = [
-    'jstests/parallel/fsm_workloads/update_inc.js',
+//    'jstests/parallel/fsm_workloads/update_inc.js',
 //    'jstests/parallel/fsm_workloads/rename_capped_collection_dbname_droptarget.js',
 //    'jstests/parallel/fsm_workloads/drop_collection.js',
 //    'jstests/parallel/fsm_workloads/update_ordered_bulk_inc.js',
