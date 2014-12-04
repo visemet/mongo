@@ -12,14 +12,6 @@ load('jstests/parallel/fsm_workloads/indexed_insert_base.js'); // for $config
 
 var $config = extendWorkload($config, function($config, $super) {
 
-    /*
-    $config.states.insert = function insert(db, collName) {
-        var res = db[collName].insert(this.getDoc());
-        assertAlways.eq(1, res.nInserted, tojson(res));
-        this.nInserted += this.docsPerInsert;
-    };
-    */
-
     $config.data.nolock = false;
 
     $config.states.insert = function insert(db, collName) {
