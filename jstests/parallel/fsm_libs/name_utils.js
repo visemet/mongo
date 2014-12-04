@@ -1,3 +1,4 @@
+'use strict';
 
 /**
  * Helpers for generating names of databases and collections
