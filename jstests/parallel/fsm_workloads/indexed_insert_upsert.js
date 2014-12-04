@@ -26,6 +26,7 @@ var $config = extendWorkload($config, function($config, $super) {
     $config.states.insert = function insert(db, collName) {
         var doc = this.getDoc();
         doc.counter = this.counter++; // ensure doc is unique to guarantee an upsert occurs
+        doc._id = ObjectId(); // for sharding
 
         var res = db[collName].update(doc, { $inc: { unused: 0 } }, { upsert: true });
         assertAlways.eq(0, res.nMatched, tojson(res));
