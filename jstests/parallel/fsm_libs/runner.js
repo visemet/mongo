@@ -379,7 +379,7 @@ var runner = (function() {
     return {
         serial: function serial(workloads, clusterOptions, executionOptions) {
             executionOptions = executionOptions || {};
-            runWorkloads(workloads, clusterOptions, {}, executionOptions;
+            runWorkloads(workloads, clusterOptions, {}, executionOptions);
         },
 
         parallel: function parallel(workloads, clusterOptions, executionOptions) {
