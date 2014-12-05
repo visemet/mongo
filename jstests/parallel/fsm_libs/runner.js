@@ -171,6 +171,19 @@ var runner = (function() {
         });
     }
 
+    function dropAllDatabases(db, blacklist) {
+        var res = db.adminCommand('listDatabases');
+        assert.commandWorked(res);
+
+        res.databases.forEach(function(dbInfo) {
+            if (!Array.contains(blacklist, dbInfo.name)) {
+                var res = db.getSiblingDB(dbInfo.name).dropDatabase();
+                assert.commandWorked(res);
+                assert.eq(dbInfo.name, res.dropped);
+            }
+        });
+    }
+
     function cleanupWorkloadData(workloads, context, clusterOptions) {
         // If no other workloads will be using this collection,
         // then drop it to avoid having too many files open
@@ -315,14 +328,14 @@ var runner = (function() {
             context[workload] = { config: parseConfig($config) };
         });
 
-        // Clean up the state left behind by other tests in the parallel suite
-        // to avoid having too many open files
-        db.dropDatabase();
-
         var threadMgr = new ThreadManager(clusterOptions, executionMode);
 
         var cluster = new Cluster(clusterOptions);
         cluster.setup();
+
+        // Clean up the state left behind by other tests in the parallel suite
+        // to avoid having too many open files
+        dropAllDatabases(cluster.getDB('test'), ['admin', 'local'] /* blacklist */);
 
         var maxAllowedConnections = 100;
         Random.setRandomSeed(clusterOptions.seed);
