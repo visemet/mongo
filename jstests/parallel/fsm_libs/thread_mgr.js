@@ -17,6 +17,10 @@ var ThreadManager = function(clusterOptions, executionMode) {
         // to ensure that the database connection implicitly created
         // within the thread's scope is closed.
         var guardedThreadFn = function(threadFn, workloads, args, options) {
+            // Preserve data files
+            DB.prototype.dropDatabase = function() { return true; };
+            DBCollection.prototype.drop = function() { return true; };
+
             try {
                 return threadFn(workloads, args, options);
             } finally {

@@ -6,6 +6,10 @@ load('jstests/parallel/fsm_libs/name_utils.js');
 load('jstests/parallel/fsm_libs/parse_config.js');
 load('jstests/parallel/fsm_libs/thread_mgr.js');
 
+// Preserve data files
+DB.prototype.dropDatabase = function() { return true; };
+DBCollection.prototype.drop = function() { return true; };
+
 var runner = (function() {
 
     function validateExecutionMode(mode) {
