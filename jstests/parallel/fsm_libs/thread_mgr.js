@@ -18,7 +18,7 @@ var ThreadManager = function(clusterOptions, executionMode) {
         // within the thread's scope is closed.
         var guardedThreadFn = function(threadFn, workloads, args, options) {
             // Preserve data files
-            DB.prototype.dropDatabase = function() { return true; };
+            DB.prototype.dropDatabase = function() { return { ok: 1, dropped: this.getName() }; };
             DBCollection.prototype.drop = function() { return true; };
 
             try {
