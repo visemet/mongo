@@ -334,7 +334,8 @@ var runner = (function() {
 
         // Clean up the state left behind by other tests in the parallel suite
         // to avoid having too many open files
-        dropAllDatabases(cluster.getDB('test'), ['admin', 'local'] /* blacklist */);
+        dropAllDatabases(cluster.getDB('test'),
+                         ['admin', 'config', 'local', '$external'] /* blacklist */);
 
         var maxAllowedConnections = 100;
         Random.setRandomSeed(clusterOptions.seed);
