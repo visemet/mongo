@@ -110,10 +110,10 @@ var runner = (function() {
         var subsetSize = executionOptions.subsetSize || 10;
 
         // If the number of subsets is not specified, then have each
-        // workload get scheduled 2 to 3 times.
+        // workload get scheduled 1 to 2 times.
         var numSubsets = executionOptions.numSubsets;
         if (!numSubsets) {
-            numSubsets = Math.ceil(2.5 * workloads.length / subsetSize);
+            numSubsets = Math.ceil(1.5 * workloads.length / subsetSize);
         }
 
         workloads = workloads.slice(0); // copy
