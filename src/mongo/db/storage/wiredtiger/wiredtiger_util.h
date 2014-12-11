@@ -52,6 +52,7 @@ namespace mongo {
      * converts wiredtiger return codes to mongodb statuses.
      */
     inline Status wtRCToStatus(int retCode, const char* prefix = NULL ) {
+        printStackTrace();
         if (MONGO_likely(retCode == 0))
             return Status::OK();
 
