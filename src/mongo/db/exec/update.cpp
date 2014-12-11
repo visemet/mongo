@@ -759,6 +759,7 @@ namespace mongo {
                 catch ( const WriteConflictException& de ) {
                     if ( !_params.request->isMulti() ) {
                         // We don't handle this here as we handle at the top level
+                        assertWriteConflictWouldBeCaught();
                         throw;
                     }
 

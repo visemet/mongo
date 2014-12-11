@@ -66,10 +66,12 @@ namespace mongo {
     }
 
     WriteConflictCatcher::WriteConflictCatcher() : _old(wouldWriteConflictBeCaught.get()) {
+        log() << "entering catcher";
         wouldWriteConflictBeCaught.set(true);
     }
 
     WriteConflictCatcher::~WriteConflictCatcher() {
+        log() << "leaving catcher";
         wouldWriteConflictBeCaught.set(_old);
     }
 

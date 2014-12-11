@@ -386,6 +386,7 @@ namespace {
         }
 
         try {
+            WriteConflictCatcher wcc;
             WiredTigerCursor curwrap( _uri, _instanceId, txn);
             WT_CURSOR *c = curwrap.get();
             int ret = c->next(c);
@@ -424,6 +425,7 @@ namespace {
                 log() << "got conflict purging oplog, ignoring";
                 return;
             }
+            assertWriteConflictWouldBeCaught();
             throw;
         }
         catch ( ... ) {
