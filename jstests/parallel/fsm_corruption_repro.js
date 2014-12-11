@@ -7,8 +7,6 @@ var dir = 'jstests/parallel/fsm_workloads';
 var whitelist = [
     'map_reduce_reduce.js',
     'map_reduce_replace.js',
-//    'map_reduce_inline.js',
-//    'remove_multiple_documents.js',
     'update_multifield.js', // triggered it
 ].map(function(file) { return dir + '/' + file; });
 
