@@ -32,6 +32,7 @@
 
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/util/log.h"
+#include "mongo/util/stacktrace.h"
 
 namespace mongo {
 
@@ -60,4 +61,21 @@ namespace mongo {
 
     }
 
+    namespace {
+        ThreadLocalValue<bool> wouldWriteConflictBeCaught(false);
+    }
+
+    WriteConflictCatcher::WriteConflictCatcher() : _old(wouldWriteConflictBeCaught.get()) {
+        wouldWriteConflictBeCaught.set(true);
+    }
+
+    WriteConflictCatcher::~WriteConflictCatcher() {
+        wouldWriteConflictBeCaught.set(_old);
+    }
+
+    void assertWriteConflictWouldBeCaught() {
+        if (!wouldWriteConflictBeCaught.get()) {
+            printStackTrace();
+        }
+    }
 }

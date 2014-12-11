@@ -109,6 +109,7 @@ namespace mongo {
             int attempt = 0;
             while ( 1 ) {
                 try {
+                    WriteConflictCatcher wcc;
                     errmsg = "";
 
                     // We can always retry because we only ever modify one document

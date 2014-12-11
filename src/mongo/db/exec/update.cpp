@@ -752,6 +752,7 @@ namespace mongo {
             BSONObj reFetched;
             while ( 1 ) {
                 try {
+                    WriteConflictCatcher wcc;
                     transformAndUpdate(reFetched.isEmpty() ? oldObj : reFetched , loc);
                     break;
                 }

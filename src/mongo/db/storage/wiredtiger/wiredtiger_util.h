@@ -37,6 +37,8 @@
 #include "mongo/base/status.h"
 #include "mongo/base/status_with.h"
 #include "mongo/util/assert_util.h"
+#include "mongo/util/stacktrace.h"
+#include "mongo/db/concurrency/write_conflict_exception.h"
 
 namespace mongo {
 
@@ -52,7 +54,7 @@ namespace mongo {
      * converts wiredtiger return codes to mongodb statuses.
      */
     inline Status wtRCToStatus(int retCode, const char* prefix = NULL ) {
-        printStackTrace();
+        assertWriteConflictWouldBeCaught();
         if (MONGO_likely(retCode == 0))
             return Status::OK();
 

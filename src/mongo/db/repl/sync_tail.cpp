@@ -240,6 +240,7 @@ namespace repl {
 
         for ( int createCollection = 0; createCollection < 2; createCollection++ ) {
             try {
+                WriteConflictCatcher wcc;
                 boost::scoped_ptr<Lock::ScopedLock> lk;
                 boost::scoped_ptr<Lock::CollectionLock> lk2;
 

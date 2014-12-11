@@ -199,6 +199,7 @@ namespace mongo {
             ASSERT_OK( rs->updateRecord( t1.get(), loc2, "B", 2, false, NULL ).getStatus() );
 
             try {
+                WriteConflictCatching wcc;
                 // this should fail
                 rs->updateRecord( t2.get(), loc1, "c", 2, false, NULL );
                 ASSERT( 0 );

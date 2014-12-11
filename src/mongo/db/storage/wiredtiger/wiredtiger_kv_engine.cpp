@@ -260,6 +260,7 @@ namespace mongo {
             return;
 
         try {
+            WriteConflictCatcher wcc;
             WiredTigerSession session( _conn, -1 );
             WT_SESSION* s = session.getSession();
             invariantWTOK( s->begin_transaction( s, sync ? "sync=true" : NULL ) );

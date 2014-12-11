@@ -682,6 +682,7 @@ namespace {
         int attempt = 1;
         while ( 1 ) {
             try {
+                WriteConflictCatcher wcc;
                 ParsedDelete parsedDelete(txn, &request);
                 uassertStatusOK(parsedDelete.parseRequest());
 

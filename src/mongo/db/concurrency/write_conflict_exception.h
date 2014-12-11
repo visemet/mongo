@@ -33,6 +33,7 @@
 #include <exception>
 
 #include "mongo/util/assert_util.h"
+#include "mongo/util/concurrency/threadlocal.h"
 
 namespace mongo {
 
@@ -56,4 +57,13 @@ namespace mongo {
                                   const StringData& ns);
     };
 
+    class WriteConflictCatcher {
+    public:
+        WriteConflictCatcher();
+        ~WriteConflictCatcher();
+    private:
+        bool _old;
+    };
+
+    void assertWriteConflictWouldBeCaught();
 }
