@@ -6,10 +6,10 @@ var dir = 'jstests/parallel/fsm_workloads';
 
 var whitelist = [
     'indexed_insert_large_noindex.js',
-//    'map_reduce_reduce.js',
-//    'map_reduce_replace.js',
+    'map_reduce_reduce.js',
+    'map_reduce_replace.js',
     'indexed_insert_2d.js',
-//    'map_reduce_inline.js',
+    'map_reduce_inline.js',
     'indexed_insert_base_noindex.js',
     'remove_multiple_documents.js',
     'update_multifield.js', // triggered it
