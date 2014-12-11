@@ -74,7 +74,7 @@ var $config = (function() {
     var threadCount = 50;
     return {
         threadCount: threadCount,
-        iterations: 100,
+        iterations: 10000,
         startState: 'update',
         states: states,
         transitions: transitions,
