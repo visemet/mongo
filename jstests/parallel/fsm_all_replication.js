@@ -1,3 +1,5 @@
+'use strict';
+
 load('jstests/parallel/fsm_libs/runner.js');
 
 var dir = 'jstests/parallel/fsm_workloads';

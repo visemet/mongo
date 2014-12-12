@@ -1,3 +1,5 @@
+'use strict';
+
 load('jstests/parallel/fsm_libs/runner.js');
 
 var dir = 'jstests/parallel/fsm_workloads';
@@ -8,6 +10,6 @@ var blacklist = [
 ].map(function(file) { return dir + '/' + file; });
 
 // SERVER-16196 re-enable executing workloads
-// runMixtureOfWorkloads(ls(dir).filter(function(file) {
+// runCompositionOfWorkloads(ls(dir).filter(function(file) {
 //     return !Array.contains(blacklist, file);
 // }));
