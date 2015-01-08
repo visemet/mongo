@@ -37,6 +37,7 @@ var blacklist = [
     'indexed_insert_eval_nolock.js', // eval doesn't work with sharded collections
     'remove_single_document.js', // our .remove(query, {justOne: true}) calls lack shard keys
     'remove_single_document_eval.js', // eval doesn't work with sharded collections
+    'remove_single_document_eval_nolock.js', // eval doesn't work with sharded collections
     'update_simple_eval.js', // eval doesn't work with sharded collections
     'update_simple_eval_nolock.js', // eval doesn't work with sharded collections
     'update_upsert_multi.js', // our update queries lack shard keys
