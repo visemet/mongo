@@ -24,7 +24,7 @@ var $config = extendWorkload($config, function($config, $super) {
             { $set: { x: Random.randInt(this.randomBound) } },
             { multi: true }
         );
-        assertAlways().writeOK(res);
+        assertAlways.writeOK(res);
 
         if (db.getMongo().writeMode() === 'commands') {
             assertAlways.gte(res.nModified, 0);
