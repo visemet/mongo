@@ -7,6 +7,9 @@ var dir = 'jstests/concurrency/fsm_workloads';
 var blacklist = [
     // Disabled due to known bugs
     'agg_match.js', // SERVER-3645 .count() can be wrong on sharded collections
+    'count.js', // SERVER-3645 .count() can be wrong on sharded collections
+    'count_limit_skip.js', // SERVER-3645 .count() can be wrong on sharded collections
+    'count_noindex.js', // SERVER-3645 .count() can be wrong on sharded collections
 
     // Disabled due to MongoDB restrictions and/or workload restrictions
 
