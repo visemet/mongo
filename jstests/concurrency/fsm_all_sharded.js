@@ -25,6 +25,8 @@ var blacklist = [
 
     'agg_group_external.js', // uses >100MB of data, and is flaky
     'agg_sort_external.js', // uses >100MB of data, and is flaky
+    'convert_to_capped_collection.js', // convertToCapped can't be run on mongos processes
+    'convert_to_capped_collection_index.js', // convertToCapped can't be run on mongos processes
     'findAndModify_remove.js', // our findAndModify queries lack shard keys
     'findAndModify_update.js', // our findAndModify queries lack shard keys
     'findAndModify_update_collscan.js', // our findAndModify queries lack shard keys
