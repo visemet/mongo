@@ -9,7 +9,7 @@
 
 load('jstests/concurrency/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/concurrency/fsm_workloads/indexed_insert_where.js'); // for $config
-load('jstests/concurrency/fsm_workload_helpers/server_types.js'); // for isWiredTiger
+load('jstests/concurrency/fsm_workload_helpers/server_types.js'); // for isMMAPv1
 
 var $config = extendWorkload($config, function($config, $super) {
     $config.data.generateDocumentToInsert = function generateDocumentToInsert() {
@@ -22,10 +22,11 @@ var $config = extendWorkload($config, function($config, $super) {
 
     $config.states.touch = function touch(db, collName) {
         var res = db.runCommand(this.generateTouchCmdObj(collName));
-        if (isWiredTiger(db)) {
-            assertAlways.commandFailed(res); // SERVER-16114
-        } else {
+        if (isMMAPv1(db)) {
             assertAlways.commandWorked(res);
+        } else {
+            // SERVER-16850 and SERVER-16797
+            assertAlways.commandFailed(res);
         }
     };
 
