@@ -28,7 +28,10 @@ var $config = (function() {
                                       }
                                     });
             assertAlways.commandWorked(res);
-            assertWhenOwnDB.eq(res.expireAfterSeconds_new, newTTL);
+            // only assert if new expireAfterSeconds differs from old one
+            if (res.hasOwnProperty('expireAfterSeconds_new')) {
+                assertWhenOwnDB.eq(res.expireAfterSeconds_new, newTTL);
+            }
         }
 
         return {
