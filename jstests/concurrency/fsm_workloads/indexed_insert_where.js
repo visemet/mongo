@@ -46,8 +46,8 @@ var $config = (function() {
     };
 
     return {
-        threadCount: 30,
-        iterations: 20,
+        threadCount: 10,
+        iterations: 10,
         data: data,
         states: states,
         startState: 'insert',
