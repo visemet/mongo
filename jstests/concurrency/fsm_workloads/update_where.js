@@ -27,8 +27,8 @@ var $config = extendWorkload($config, function($config, $super) {
         assertAlways.writeOK(res);
 
         if (db.getMongo().writeMode() === 'commands') {
-            assertAlways.gte(res.nModified, 0);
-            assertAlways.lte(res.nModified, this.insertedDocuments);
+            assertWhenOwnColl.gte(res.nModified, 0);
+            assertWhenOwnColl.lte(res.nModified, this.insertedDocuments);
         }
     };
 

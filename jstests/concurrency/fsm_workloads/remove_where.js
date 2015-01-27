@@ -23,8 +23,8 @@ var $config = extendWorkload($config, function($config, $super) {
             $where: 'this.x === Math.floor(Math.random() * ' + this.randomBound + ') ' +
                     '&& this.tid === ' + this.tid 
         });
-        assertAlways.gte(res.nRemoved, 0);
-        assertAlways.lte(res.nRemoved, this.insertedDocuments);
+        assertWhenOwnColl.gte(res.nRemoved, 0);
+        assertWhenOwnColl.lte(res.nRemoved, this.insertedDocuments);
         this.insertedDocuments -= res.nRemoved;
     };
 
