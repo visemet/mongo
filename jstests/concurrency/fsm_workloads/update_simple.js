@@ -33,7 +33,7 @@ var $config = (function() {
         }
     };
 
-    function setup(db, collName) {
+    function setup(db, collName, cluster) {
         // index on 'value', the field being updated
         assertAlways.commandWorked(db[collName].ensureIndex({ value: 1 }));
         for (var i = 0; i < this.numDocs; ++i) {

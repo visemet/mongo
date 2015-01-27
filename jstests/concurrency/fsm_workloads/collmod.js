@@ -44,7 +44,7 @@ var $config = (function() {
         collMod: { collMod: 1 }
     };
 
-    function setup(db, collName) {
+    function setup(db, collName, cluster) {
         // other workloads that extend this one might have set 'this.threadCollName'
         this.threadCollName = this.threadCollName || collName;
         var bulk = db[this.threadCollName].initializeUnorderedBulkOp();

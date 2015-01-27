@@ -68,7 +68,7 @@ var $config = (function() {
         find: { update: 1 }
     };
 
-    function setup(db, collName) {
+    function setup(db, collName, cluster) {
         db[collName].insert({ _id: this.id });
     }
 

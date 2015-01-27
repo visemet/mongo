@@ -34,7 +34,9 @@ var $config = extendWorkload($config, function($config, $super) {
         query: { insert: 0.4, remove: 0.4, query: 0.2 }
     };
 
-    $config.setup = function setup() { /* no-op to prevent index from being created */ };
+    $config.setup = function setup(db, collName, cluster) { 
+        /* no-op to prevent index from being created */ 
+    };
 
     return $config;
 });

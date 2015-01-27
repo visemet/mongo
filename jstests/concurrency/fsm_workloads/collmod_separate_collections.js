@@ -16,12 +16,12 @@ load('jstests/concurrency/fsm_workload_helpers/drop_utils.js'); // for dropColle
 var $config = extendWorkload($config, function($config, $super) {
     $config.data.prefix = 'collmod_separate_collections';
 
-    $config.setup = function setup(db, collName) {
+    $config.setup = function setup(db, collName, cluster) {
         this.threadCollName = this.prefix + '_' + this.tid;
         $super.setup.apply(this, arguments);
     };
 
-    $config.teardown = function teardown(db, collName) {
+    $config.teardown = function teardown(db, collName, cluster) {
         var pattern = new RegExp('^' + this.prefix + '_\\d+$');
         dropCollections(db, pattern);
         $super.teardown.apply(this, arguments);

@@ -73,7 +73,7 @@ var $config = (function() {
         find: { insert: 1 }
     };
 
-    function setup(db, collName) {
+    function setup(db, collName, cluster) {
         var res = db[collName].ensureIndex(this.getIndexSpec());
         assertAlways.commandWorked(res);
         this.indexExists = true;

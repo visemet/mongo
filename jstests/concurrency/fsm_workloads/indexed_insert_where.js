@@ -41,7 +41,7 @@ var $config = (function() {
         query: { insert: 0.8, query: 0.2 }
     };
 
-    var setup = function setup(db, collName) {
+    var setup = function setup(db, collName, cluster) {
         assertAlways.commandWorked(db[collName].ensureIndex({ tid: 1 }));
     };
 

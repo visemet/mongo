@@ -43,7 +43,7 @@ var $config = extendWorkload($config, function($config, $super) {
         query: { insert: 0.4, touch: 0.4, query: 0.2 }
     };
 
-    $config.setup = function setup(db, collName) {
+    $config.setup = function setup(db, collName, cluster) {
         assertAlways.commandWorked(db[collName].ensureIndex({ x: 1 }));
     };
 

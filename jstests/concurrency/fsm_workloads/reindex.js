@@ -98,7 +98,7 @@ var $config = (function() {
         query:           { reIndex: 0.5, query: 0.5 }
     };
 
-    var teardown = function teardown(db, collName) {
+    var teardown = function teardown(db, collName, cluster) {
         var pattern = new RegExp('^' + this.prefix + '_\\d+$');
         dropCollections(db, pattern);
     };

@@ -61,7 +61,7 @@ var $config = (function() {
         update: { update: 1 }
     };
 
-    function setup(db, collName) {
+    function setup(db, collName, cluster) {
         assertAlways.commandWorked(db[collName].ensureIndex({ x: 1 }));
         assertAlways.commandWorked(db[collName].ensureIndex({ y: 1 }));
         assertAlways.commandWorked(db[collName].ensureIndex({ z: 1 }));
