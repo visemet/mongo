@@ -7,6 +7,8 @@
  * The indexed field contains unique values.
  * Each thread operates on a separate collection.
  */
+load('jstests/concurrency/fsm_workload_helpers/drop_utils.js'); // for dropCollections
+
 var $config = (function() {
 
     var data = {

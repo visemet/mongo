@@ -7,8 +7,8 @@ load('jstests/concurrency/fsm_libs/parse_config.js'); // for parseConfig
 var workerThread = (function() {
 
     // workloads = list of workload filenames
-    // args.data = 'this' parameter passed to the FSM state functions
-    // args.data.tid = the thread identifier
+    // args.tid = the thread identifier
+    // args.data = map of workload -> 'this' parameter passed to the FSM state functions
     // args.host = the address to make a new connection to
     // args.latch = CountDownLatch instance for starting all threads
     // args.dbName = the database name
@@ -41,9 +41,10 @@ var workerThread = (function() {
 
                 // Copy any modifications that were made to $config.data
                 // during the setup function of the workload
-                var data = Object.extend({}, args.data, true);
-                data = Object.extend(data, config.data, true);
+                var data = Object.extend({}, config.data, true);
+                data = Object.extend(data, args.data[workload], true);
 
+                data.tid = args.tid;
                 configs[workload] = {
                     data: data,
                     db: myDB,

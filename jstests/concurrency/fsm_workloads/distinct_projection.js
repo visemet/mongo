@@ -9,7 +9,6 @@
  */
 load('jstests/concurrency/fsm_libs/extend_workload.js'); // for extendWorkload
 load('jstests/concurrency/fsm_workloads/distinct.js'); // for $config
-load('jstests/concurrency/fsm_workload_helpers/drop_utils.js'); // for dropCollections
 
 var $config = extendWorkload($config, function($config, $super) {
     $config.data.prefix = 'distinct_projection_fsm';
