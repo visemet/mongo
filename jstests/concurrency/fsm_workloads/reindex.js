@@ -60,7 +60,7 @@ var $config = (function() {
 
             var coords = [[ [-26, -26], [-26, 26], [26, 26], [26, -26], [-26, -26] ]];
             var geoQuery = { geo: { $geoWithin: { $geometry: { type: 'Polygon',
-                                                               coordinates: }}}};
+                                                               coordinates: coords}}}};
 
             // We can only perform a geo query when we own the collection and are sure a geo index
             // is present. The same is true of text queries.
