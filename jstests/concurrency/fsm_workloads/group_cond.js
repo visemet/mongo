@@ -37,4 +37,4 @@ var $config = extendWorkload($config, function($config, $super) {
     };
 
     return $config;
-})
+});

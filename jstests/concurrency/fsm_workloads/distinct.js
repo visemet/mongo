@@ -47,7 +47,7 @@ var $config = (function() {
     function teardown(db, collName, cluster) {
         var pattern = new RegExp('^' + this.prefix + '_\\d+$');
         dropCollections(db, pattern);
-    };
+    }
 
     return {
         data: data,

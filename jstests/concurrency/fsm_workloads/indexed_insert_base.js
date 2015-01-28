@@ -52,7 +52,7 @@ var $config = (function() {
             var ownColl = false;
             assertWhenOwnColl(function() { ownColl = true; });
             if (this.indexExists && ownColl) {
-                var count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
+                count = db[collName].find(this.getDoc()).hint(this.getIndexSpec()).itcount();
                 assertWhenOwnColl.eq(count, this.nInserted);
             }
 
