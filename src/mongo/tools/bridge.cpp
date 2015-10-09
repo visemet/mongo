@@ -122,7 +122,7 @@ public:
                     if (host) {
                         hostName = host->toString();
                     }
-                    LOG(1) << "Received \"" << cmdRequest->getCommandName()
+                    LOG(0) << "Received \"" << cmdRequest->getCommandName()
                            << "\" command with arguments " << cmdRequest->getCommandArgs()
                            << " from " << hostName;
                 }

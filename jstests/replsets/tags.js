@@ -8,6 +8,12 @@
     var replTest = new ReplSetTest({name: name, nodes: num, useBridge: true});
     var nodes = replTest.nodeList();
     var conns = replTest.startSet();
+    conns.forEach(function(conn) {
+        conn.getDB('admin').runCommand({
+            setParameter: 1,
+            logComponentVerbosity: {replication: {verbosity: 3}},
+        });
+    });
     var port = replTest.ports;
     replTest.initiate({
         _id: name,
