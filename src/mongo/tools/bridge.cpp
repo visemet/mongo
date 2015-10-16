@@ -30,182 +30,296 @@
 
 #include "mongo/platform/basic.h"
 
-#include <iostream>
-#include <signal.h>
+#include <boost/optional.hpp>
 
+#include "mongo/base/init.h"
 #include "mongo/base/initializer.h"
 #include "mongo/client/dbclientinterface.h"
 #include "mongo/db/dbmessage.h"
+#include "mongo/db/service_context.h"
+#include "mongo/db/service_context_noop.h"
+#include "mongo/rpc/command_request.h"
+#include "mongo/rpc/factory.h"
+#include "mongo/rpc/reply_builder_interface.h"
+#include "mongo/rpc/request_interface.h"
+#include "mongo/stdx/memory.h"
+#include "mongo/stdx/mutex.h"
 #include "mongo/stdx/thread.h"
+#include "mongo/tools/bridge_commands.h"
 #include "mongo/tools/mongobridge_options.h"
 #include "mongo/util/log.h"
+#include "mongo/util/mongoutils/str.h"
 #include "mongo/util/net/listen.h"
 #include "mongo/util/net/message.h"
+#include "mongo/util/exit_code.h"
 #include "mongo/util/quick_exit.h"
-#include "mongo/util/stacktrace.h"
 #include "mongo/util/static_observer.h"
+#include "mongo/util/signal_handlers.h"
 #include "mongo/util/text.h"
 #include "mongo/util/timer.h"
 
-using namespace mongo;
-using namespace std;
-
 namespace mongo {
-bool inShutdown() {
-    return false;
-}
-}  // namespace mongo
 
-void cleanup(int sig);
+namespace {
+
+boost::optional<HostAndPort> extractHostInfo(const rpc::RequestInterface& request) {
+    BSONObj args = request.getCommandArgs();
+    if (auto hostInfoElem = args["hostInfo"]) {
+        if (hostInfoElem.type() == String) {
+            return HostAndPort{hostInfoElem.valueStringData()};
+        }
+    }
+    return boost::none;
+}
 
 class Forwarder {
 public:
-    Forwarder(MessagingPort& mp) : mp_(mp) {}
+    Forwarder(MessagingPort& mp, stdx::mutex* settingsMutex, HostSettingsMap& settings)
+        : _mp(mp), _settingsMutex(settingsMutex), _settings(settings) {}
 
-    void operator()() const {
+    void operator()() {
         DBClientConnection dest;
-        string errmsg;
 
-        Timer connectTimer;
-        while (!dest.connect(HostAndPort(mongoBridgeGlobalParams.destUri), errmsg)) {
-            // If we can't connect for the configured timeout, give up
-            //
-            if (connectTimer.seconds() >= mongoBridgeGlobalParams.connectTimeoutSec) {
-                cout << "Unable to establish connection from " << mp_.psock->remoteString()
-                     << " to " << mongoBridgeGlobalParams.destUri << " after "
-                     << connectTimer.seconds() << " seconds. Giving up." << endl;
-                mp_.shutdown();
-                return;
+        {
+            const int kConnectTimeoutSecs = 30;
+            std::string errMsg;
+            Timer connectTimer;
+            while (!dest.connect(HostAndPort{mongoBridgeGlobalParams.destUri}, errMsg)) {
+                if (connectTimer.seconds() >= kConnectTimeoutSecs) {
+                    warning() << "Unable to establish connection to "
+                              << mongoBridgeGlobalParams.destUri << " after " << kConnectTimeoutSecs
+                              << " seconds: " << errMsg;
+                    log() << "end connection " << _mp.psock->remoteString();
+                    _mp.shutdown();
+                    return;
+                }
+                sleepmillis(500);
             }
-
-            sleepmillis(500);
         }
 
-        Message m;
-        while (1) {
+        bool receivingFirstMessage = true;
+        boost::optional<HostAndPort> host;
+
+        Message request;
+        Message response;
+
+        while (true) {
             try {
-                m.reset();
-                if (!mp_.recv(m)) {
-                    cout << "end connection " << mp_.psock->remoteString() << endl;
-                    mp_.shutdown();
+                request.reset();
+                if (!_mp.recv(request)) {
+                    log() << "end connection " << _mp.psock->remoteString();
+                    _mp.shutdown();
                     break;
                 }
-                sleepmillis(mongoBridgeGlobalParams.delay);
 
-                int oldId = m.header().getId();
-                if (m.operation() == dbQuery || m.operation() == dbMsg ||
-                    m.operation() == dbGetMore || m.operation() == dbCommand) {
-                    bool exhaust = false;
-                    if (m.operation() == dbQuery) {
-                        DbMessage d(m);
-                        QueryMessage q(d);
-                        exhaust = q.queryOptions & QueryOption_Exhaust;
+                if (request.operation() == dbQuery || request.operation() == dbCommand) {
+                    auto cmdRequest = rpc::makeRequest(&request);
+                    if (receivingFirstMessage) {
+                        host = extractHostInfo(*cmdRequest);
                     }
-                    Message response;
-                    dest.port().call(m, response);
 
-                    // nothing to reply with?
+                    std::string hostName = "<unknown>";
+                    if (host) {
+                        hostName = host->toString();
+                    }
+                    LOG(1) << "Received \"" << cmdRequest->getCommandName()
+                           << "\" command with arguments " << cmdRequest->getCommandArgs()
+                           << " from " << hostName;
+                }
+                receivingFirstMessage = false;
+
+                int requestId = request.header().getId();
+                if (auto status = maybeProcessBridgeCommand(request)) {
+                    auto replyBuilder = rpc::makeReplyBuilder(rpc::Protocol::kOpCommandV1);
+                    BSONObj metadata;
+                    BSONObj reply;
+                    StatusWith<BSONObj> commandReply(reply);
+                    if (!status->isOK()) {
+                        commandReply = StatusWith<BSONObj>(*status);
+                    }
+                    auto cmdResponse =
+                        replyBuilder->setMetadata(metadata).setCommandReply(commandReply).done();
+                    _mp.say(*cmdResponse, requestId);
+                    continue;
+                }
+
+                HostSettings hostSettings;
+                if (host) {
+                    stdx::lock_guard<stdx::mutex> lk(*_settingsMutex);
+                    hostSettings = _settings[*host];
+                }
+
+                switch (hostSettings.state) {
+                    case HostSettings::State::kForward:
+                        sleepmillis(hostSettings.delay);
+                        break;
+                    case HostSettings::State::kHangUp:
+                        log() << "Rejecting connection from " << host->toString()
+                              << ", end connection " << _mp.psock->remoteString();
+                        _mp.shutdown();
+                        return;
+                }
+
+                if (request.operation() == dbQuery || request.operation() == dbMsg ||
+                    request.operation() == dbGetMore || request.operation() == dbCommand) {
+                    // Forward the message to 'dest' and receive its reply in 'response'.
+                    response.reset();
+                    dest.port().call(request, response);
+
+                    // If there's nothing to respond back to '_mp' with, then close the connection.
                     if (response.empty()) {
-                        cout << "end connection " << dest.toString() << endl;
-                        mp_.shutdown();
+                        log() << "Received an empty response, end connection "
+                              << _mp.psock->remoteString();
+                        _mp.shutdown();
                         break;
                     }
 
-                    mp_.reply(m, response, oldId);
+                    _mp.say(response, requestId);
+
+                    // If 'exhaust' is true, then instead of trying to receive another message from
+                    // '_mp', receive messages from 'dest' until it returns a cursor id of zero.
+                    bool exhaust = false;
+                    if (request.operation() == dbQuery) {
+                        DbMessage d(request);
+                        QueryMessage q(d);
+                        exhaust = q.queryOptions & QueryOption_Exhaust;
+                    }
                     while (exhaust) {
                         MsgData::View header = response.header();
                         QueryResult::View qr = header.view2ptr();
                         if (qr.getCursorId()) {
                             response.reset();
                             dest.port().recv(response);
-                            mp_.reply(m, response);  // m argument is ignored anyway
+                            _mp.say(response, requestId);
                         } else {
                             exhaust = false;
                         }
                     }
                 } else {
-                    dest.port().say(m, oldId);
+                    dest.port().say(request, requestId);
                 }
+            } catch (const DBException& ex) {
+                error() << "Caught DBException in Forwarder: " << ex << ", end connection "
+                        << _mp.psock->remoteString();
+                _mp.shutdown();
+                break;
+            } catch (const std::exception& ex) {
+                severe() << "Caught std::exception in Forwarder: " << ex.what() << ", terminating";
+                quickExit(EXIT_UNCAUGHT);
             } catch (...) {
-                log() << "caught exception in Forwarder, continuing" << endl;
+                severe() << "Caught unknown exception in Forwarder, terminating";
+                quickExit(EXIT_UNCAUGHT);
             }
         }
     }
 
 private:
-    MessagingPort& mp_;
+    Status runBridgeCommand(StringData cmdName, BSONObj cmdObj) {
+        auto status = Command::findCommand(cmdName);
+        if (!status.isOK()) {
+            return status.getStatus();
+        }
+
+        Command* command = status.getValue();
+        return command->run(cmdObj, _settingsMutex, _settings);
+    }
+
+    boost::optional<Status> maybeProcessBridgeCommand(Message& msg) {
+        if (msg.operation() != dbCommand) {
+            return boost::none;
+        }
+
+        rpc::CommandRequest request{&msg};
+        if (auto forBridge = request.getMetadata()["$forBridge"]) {
+            if (!forBridge.trueValue()) {
+                return boost::none;
+            }
+            return runBridgeCommand(request.getCommandName(), request.getCommandArgs());
+        }
+
+        return boost::none;
+    }
+
+    MessagingPort& _mp;
+
+    stdx::mutex* _settingsMutex;
+    HostSettingsMap& _settings;
 };
 
-set<MessagingPort*>& ports(*(new std::set<MessagingPort*>()));
-
-class MyListener : public Listener {
+class BridgeListener final : public Listener {
 public:
-    MyListener(int port) : Listener("bridge", "", port) {}
-    virtual void acceptedMP(MessagingPort* mp) {
-        ports.insert(mp);
-        Forwarder f(*mp);
+    BridgeListener() : Listener("bridge", "", mongoBridgeGlobalParams.port) {}
+
+    void acceptedMP(MessagingPort* mp) final {
+        _ports.insert(mp);
+        Forwarder f(*mp, &_settingsMutex, _settings);
         stdx::thread t(f);
         t.detach();
     }
+
+    void shutdownAll() {
+        for (auto mp : _ports) {
+            mp->shutdown();
+        }
+    }
+
+private:
+    std::set<MessagingPort*> _ports;
+
+    stdx::mutex _settingsMutex;
+    HostSettingsMap _settings;
 };
 
-unique_ptr<MyListener> listener;
+std::unique_ptr<mongo::BridgeListener> listener;
 
+MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+    setGlobalServiceContext(stdx::make_unique<ServiceContextNoop>());
+    return Status::OK();
+}
 
-void cleanup(int sig) {
+}  // namespace
+
+bool inShutdown() {
+    return false;
+}
+
+void logProcessDetailsForLogRotate() {}
+
+void exitCleanly(ExitCode code) {
     ListeningSockets::get()->closeAll();
-    for (set<MessagingPort*>::iterator i = ports.begin(); i != ports.end(); i++)
-        (*i)->shutdown();
-    quickExit(0);
-}
-#if !defined(_WIN32)
-void myterminate() {
-    printStackTrace(severe().stream() << "bridge terminate() called, printing stack:\n");
-    ::abort();
+    listener->shutdownAll();
+    quickExit(code);
 }
 
-void setupSignals() {
-    signal(SIGINT, cleanup);
-    signal(SIGTERM, cleanup);
-    signal(SIGPIPE, cleanup);
-    signal(SIGABRT, cleanup);
-    signal(SIGSEGV, cleanup);
-    signal(SIGBUS, cleanup);
-    signal(SIGFPE, cleanup);
-    set_terminate(myterminate);
-}
-#else
-inline void setupSignals() {}
-#endif
-
-int toolMain(int argc, char** argv, char** envp) {
-    mongo::runGlobalInitializersOrDie(argc, argv, envp);
-
+int bridgeMain(int argc, char** argv, char** envp) {
     static StaticObserver staticObserver;
+    setupSignalHandlers(false);
+    runGlobalInitializersOrDie(argc, argv, envp);
+    startSignalProcessingThread();
 
-    setupSignals();
-
-    listener.reset(new MyListener(mongoBridgeGlobalParams.port));
+    listener = stdx::make_unique<BridgeListener>();
     listener->setupSockets();
     listener->initAndListen();
 
-    return 0;
+    return EXIT_CLEAN;
 }
+
+}  // namespace mongo
 
 #if defined(_WIN32)
 // In Windows, wmain() is an alternate entry point for main(), and receives the same parameters
 // as main() but encoded in Windows Unicode (UTF-16); "wide" 16-bit wchar_t characters.  The
 // WindowsCommandLine object converts these wide character strings to a UTF-8 coded equivalent
-// and makes them available through the argv() and envp() members.  This enables toolMain()
+// and makes them available through the argv() and envp() members.  This enables bridgeMain()
 // to process UTF-8 encoded arguments and environment variables without regard to platform.
 int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
     WindowsCommandLine wcl(argc, argvW, envpW);
-    int exitCode = toolMain(argc, wcl.argv(), wcl.envp());
-    quickExit(exitCode);
+    int exitCode = mongo::bridgeMain(argc, wcl.argv(), wcl.envp());
+    mongo::quickExit(exitCode);
 }
 #else
 int main(int argc, char* argv[], char** envp) {
-    int exitCode = toolMain(argc, argv, envp);
-    quickExit(exitCode);
+    int exitCode = mongo::bridgeMain(argc, argv, envp);
+    mongo::quickExit(exitCode);
 }
 #endif
