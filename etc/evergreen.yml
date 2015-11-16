@@ -1385,7 +1385,7 @@ tasks:
   - func: "do setup"
   - func: "run tests"
     vars:
-      resmoke_args: --suites=concurrency --storageEngine=mmapv1
+      resmoke_args: --executor=concurrency jstests/concurrency/fsm_all_simultaneous.js --storageEngine=mmapv1 --repeat=10
 
 - <<: *task_template
   name: concurrency_WT
@@ -1393,7 +1393,7 @@ tasks:
   - func: "do setup"
   - func: "run tests"
     vars:
-      resmoke_args: --suites=concurrency --storageEngine=wiredTiger
+      resmoke_args: --executor=concurrency jstests/concurrency/fsm_all_simultaneous.js --storageEngine=wiredTiger --repeat=10
 
 - <<: *task_template
   name: concurrency_replication
