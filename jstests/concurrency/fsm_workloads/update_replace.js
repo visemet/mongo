@@ -29,6 +29,7 @@ var $config = (function() {
             assertWhenOwnColl.contains(res.nMatched, [0, 1], tojson(res));
             if (db.getMongo().writeMode() === 'commands') {
                 assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
+                assertAlways.lte(res.nModified, res.nMatched, tojson(res));
             }
         }
     }
