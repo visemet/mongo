@@ -15,7 +15,7 @@ var blacklist = [
     // indexed_insert_base_capped.js sometimes fails due to "CappedPositionLost CollectionScan died
     // due to position in capped collection being deleted" when run with worklaods that cause the
     // server to trigger more frequently yielding.
-    'indexed_insert_base_capped',
+    'indexed_insert_base_capped.js',
 ].map(function(file) { return dir + '/' + file; });
 
 // SERVER-16196 re-enable executing workloads
