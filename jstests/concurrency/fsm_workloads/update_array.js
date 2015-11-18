@@ -50,10 +50,9 @@ var $config = (function() {
                 assertWhenOwnColl(doc.hasOwnProperty('arr'),
                                   'doc should have contained a field named "arr": ' + tojson(doc));
 
-                // The document was updated if the command response says so, or if it couldn't have
-                // been invalidated during a yield.
-                if ((db.getMongo().writeMode() === 'commands' && res.nModified === 1) ||
-                    (isMongod(db) && !isMMAPv1(db))) {
+                // The $push operator always modifies the matched document, so if we matched
+                // something, then we must have updated it.
+                if (res.nMatched > 0) {
                     assertWhenOwnColl.contains(value, doc.arr,
                                                "doc.arr doesn't contain value (" + value +
                                                ') after $push: ' + tojson(doc.arr));
