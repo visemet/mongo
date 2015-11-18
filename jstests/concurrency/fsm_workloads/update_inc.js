@@ -38,6 +38,7 @@ var $config = (function() {
                 if (db.getMongo().writeMode() === 'commands') {
                     assertWhenOwnColl.eq(res.nModified, 1, tojson(res));
                 }
+                ++this.count;
             }
             else {
                 // Zero matches are possible for MMAP v1 because the update will skip a document
@@ -46,20 +47,25 @@ var $config = (function() {
                 if (db.getMongo().writeMode() === 'commands') {
                     assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
                     assertAlways.eq(res.nModified, res.nMatched, tojson(res));
+                    this.count += (res.nModified >= 1);
                 }
             }
-
-            ++this.count;
         },
 
         find: function find(db, collName) {
+            assertAlways.lte(0, this.count);
+
             var docs = db[collName].find().toArray();
             assertWhenOwnColl.eq(1, docs.length);
             assertWhenOwnColl(() => {
-                // If the document hasn't been updated at all, then the field won't exist.
-                var doc = docs[0];
-                if (doc.hasOwnProperty(this.fieldName)) {
-                    assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
+                if (db.getMongo().writeMode() === 'commands' || (isMongod(db) && !isMMAPv1(db))) {
+                    // If the document hasn't been updated at all, then the field won't exist.
+                    var doc = docs[0];
+                    if (doc.hasOwnProperty(this.fieldName)) {
+                        assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
+                    } else {
+                        assertWhenOwnColl.eq(this.count, 0);
+                    }
                 }
             });
         }
