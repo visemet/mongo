@@ -27,13 +27,9 @@ var $config = (function() {
         }
 
         if (db.getMongo().writeMode() === 'commands') {
-            if (isMongod(db) && !supportsInPlaceUpdates(db)) {
-                assertWhenOwnColl.eq(1, res.nModified, tojson(res));
-            } else {
-                // The matched document may not have been updated if the storage engine supports
-                // in-place updates and we replaced it with the same document.
-                assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
-            }
+            // It is possible that we replaced the contents of the document with its current
+            // value, making the update a no-op.
+            assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
             assertAlways.lte(res.nModified, res.nMatched, tojson(res));
         }
     }
