@@ -55,10 +55,13 @@ var $config = (function() {
         find: function find(db, collName) {
             var docs = db[collName].find().toArray();
             assertWhenOwnColl.eq(1, docs.length);
-            assertWhenOwnColl((function() {
+            assertWhenOwnColl(() => {
+                // If the document hasn't been updated at all, then the field won't exist.
                 var doc = docs[0];
-                assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
-            }).bind(this));
+                if (doc.hasOwnProperty(this.fieldName)) {
+                    assertWhenOwnColl.eq(this.count, doc[this.fieldName]);
+                }
+            });
         }
     };
 
