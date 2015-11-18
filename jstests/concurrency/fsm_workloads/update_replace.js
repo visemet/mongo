@@ -17,20 +17,24 @@ var $config = (function() {
 
         if (isMongod(db) && !isMMAPv1(db)) {
             // For non-MMAPv1 storage engines we can make a stong assertion that exactly one
-            // document is modified.
+            // document is matched.
             assertWhenOwnColl.eq(1, res.nMatched, tojson(res));
-            if (db.getMongo().writeMode() === 'commands') {
-                assertWhenOwnColl.eq(1, res.nModified, tojson(res));
-            }
         }
         else {
-            // Zero matches are possible for MMAPv1 because the update will skip a document that was
-            // invalidated during a yield.
+            // It is possible to not match any documents with MMAPv1 because the update will skip a
+            // document that was invalidated during a yield.
             assertWhenOwnColl.contains(res.nMatched, [0, 1], tojson(res));
-            if (db.getMongo().writeMode() === 'commands') {
+        }
+
+        if (db.getMongo().writeMode() === 'commands') {
+            if (isMongod(db) && !supportsInPlaceUpdates(db)) {
+                assertWhenOwnColl.eq(1, res.nModified, tojson(res));
+            } else {
+                // The matched document may not have been updated if the storage engine supports
+                // in-place updates and we replaced it with the same document.
                 assertWhenOwnColl.contains(res.nModified, [0, 1], tojson(res));
-                assertAlways.lte(res.nModified, res.nMatched, tojson(res));
             }
+            assertAlways.lte(res.nModified, res.nMatched, tojson(res));
         }
     }
 
