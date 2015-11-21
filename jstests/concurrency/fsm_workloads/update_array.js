@@ -70,9 +70,14 @@ var $config = (function() {
             var doc = db[collName].findOne({ _id: docIndex });
             assertWhenOwnColl(function() {
                 assertWhenOwnColl.neq(null, doc);
-                assertWhenOwnColl.eq(-1, doc.arr.indexOf(value),
-                                     'doc.arr contains removed value (' + value +
-                                     ') after $pull: ' + tojson(doc.arr));
+
+                // If the update matched a document, then the $pull operator would have removed all
+                // occurrences of 'value' from the array (meaning that there should be none left).
+                if (res.nMatched > 0) {
+                    assertWhenOwnColl.eq(-1, doc.arr.indexOf(value),
+                                         'doc.arr contains removed value (' + value +
+                                         ') after $pull: ' + tojson(doc.arr));
+                }
             });
         }
 
