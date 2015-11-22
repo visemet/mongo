@@ -1381,6 +1381,7 @@ tasks:
 
 - <<: *task_template
   name: concurrency
+  exec_timeout_secs: 86400 # Time out the task if it runs for more than 24 hours.
   commands:
   - func: "do setup"
   - func: "run tests"
@@ -1389,6 +1390,7 @@ tasks:
 
 - <<: *task_template
   name: concurrency_WT
+  exec_timeout_secs: 86400 # Time out the task if it runs for more than 24 hours.
   commands:
   - func: "do setup"
   - func: "run tests"
