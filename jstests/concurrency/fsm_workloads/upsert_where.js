@@ -23,6 +23,11 @@ var $config = extendWorkload($config, function($config, $super) {
         );
         assertWhenOwnColl.eq(res.nUpserted, 1);
         var upsertedDocument = db[collName].findOne({ _id: res.getUpsertedId()._id });
+
+        if (upsertedDocument === null) {
+            throw new Error(`Couldn't find upserted document: ${tojson(res)}`);
+        }
+
         assertWhenOwnColl(function() {
             assertWhenOwnColl.eq(upsertedDocument.tid, this.tid);
         }.bind(this));
