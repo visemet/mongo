@@ -16,6 +16,9 @@ var blacklist = [
     // due to position in capped collection being deleted" when run with worklaods that cause the
     // server to trigger more frequently yielding.
     'indexed_insert_base_capped.js',
+
+    'agg_group_external.js', // uses >100MB of data, which can overwhelm test hosts
+    'agg_sort_external.js', // uses >100MB of data, which can overwhelm test hosts
 ].map(function(file) { return dir + '/' + file; });
 
 // SERVER-16196 re-enable executing workloads
