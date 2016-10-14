@@ -9,6 +9,7 @@ import sys
 
 from . import buildlogger
 from . import formatters
+from . import handlers
 from . import loggers
 
 
@@ -123,6 +124,10 @@ def _configure_logger(logger, logger_info):
         if handler_class == "logging.FileHandler":
             handler = logging.FileHandler(filename=handler_info["filename"],
                                           mode=handler_info.get("mode", "w"))
+        if handler_class == "logging.MultiFileHandler":
+            handler = handlers.MultiFileHandler(filename_pattern=handler_info["filename_pattern"],
+                                                log_dir=handler_info["log_dir"],
+                                                mode=handler_info.get("mode", "w"))
         elif handler_class == "logging.NullHandler":
             handler = logging.NullHandler()
         elif handler_class == "logging.StreamHandler":

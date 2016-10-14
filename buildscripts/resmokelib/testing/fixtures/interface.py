@@ -17,6 +17,8 @@ class Fixture(object):
     Base class for all fixtures.
     """
 
+    SHORT_NAME = "F"
+
     def __init__(self, logger, job_num):
         """
         Initializes the fixtures with a logger instance.

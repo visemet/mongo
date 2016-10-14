@@ -25,6 +25,8 @@ class MongoDFixture(interface.Fixture):
     against.
     """
 
+    SHORT_NAME = "md"
+
     AWAIT_READY_TIMEOUT_SECS = 300
 
     def __init__(self,
@@ -79,6 +81,7 @@ class MongoDFixture(interface.Fixture):
         try:
             self.logger.info("Starting mongod on port %d...\n%s", self.port, mongod.as_command())
             mongod.start()
+            self.logger.extra["port"] = self.port
             self.logger.info("mongod started on port %d with pid %d.", self.port, mongod.pid)
         except:
             self.logger.exception("Failed to start mongod on port %d.", self.port)

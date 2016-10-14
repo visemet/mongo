@@ -4,10 +4,18 @@ logging:
     handlers:
       - class: logging.StreamHandler
   fixture:
-    format: '[%(name)s] %(message)s'
+    format: '[%(job_num)02d:%(name)s] %(message)s'
     handlers:
       - class: logging.StreamHandler
+      - class: logging.MultiFileHandler
+        filename_pattern: 'fixture%(job_num)02d.log'
+        log_dir: fixture_logs
+        mode: w
   tests:
-    format: '[%(name)s] %(asctime)s %(message)s'
+    format: '[%(job_num)02d:%(name)s] %(asctime)s %(message)s'
     handlers:
       - class: logging.StreamHandler
+      - class: logging.MultiFileHandler
+        filename_pattern: 'tests%(job_num)02d.log'
+        log_dir: test_logs
+        mode: w

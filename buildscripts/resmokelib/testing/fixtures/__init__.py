@@ -22,6 +22,13 @@ _FIXTURES = {
 }
 
 
+def short_name_for_fixture(class_name):
+    """
+    Returns a shortened name of the fixture, to be used as the name of the logger for that fixture.
+    """
+    return _FIXTURES[class_name].SHORT_NAME
+
+
 def make_fixture(class_name, *args, **kwargs):
     """
     Factory function for creating Fixture instances.

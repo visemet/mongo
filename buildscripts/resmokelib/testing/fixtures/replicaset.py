@@ -21,6 +21,8 @@ class ReplicaSetFixture(interface.ReplFixture):
     Fixture which provides JSTests with a replica set to run against.
     """
 
+    SHORT_NAME = "rs"
+
     def __init__(self,
                  logger,
                  job_num,
@@ -217,12 +219,12 @@ class ReplicaSetFixture(interface.ReplFixture):
         """
 
         if index == 0:
-            logger_name = "%s:primary" % (self.logger.name)
+            logger_name = "%s:P" % (self.logger.name)
         elif index == self.initial_sync_node_idx:
-            logger_name = "%s:initsync" % (self.logger.name)
+            logger_name = "%s:IS" % (self.logger.name)
         else:
             suffix = str(index - 1) if self.num_nodes > 2 else ""
-            logger_name = "%s:secondary%s" % (self.logger.name, suffix)
+            logger_name = "%s:S%s" % (self.logger.name, suffix)
 
         return logging.loggers.new_logger(logger_name, parent=self.logger)
 

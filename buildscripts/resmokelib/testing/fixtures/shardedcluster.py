@@ -27,6 +27,8 @@ class ShardedClusterFixture(interface.Fixture):
     against.
     """
 
+    SHORT_NAME = "cluster"
+
     _CONFIGSVR_REPLSET_NAME = "config-rs"
 
     def __init__(self,
@@ -176,7 +178,7 @@ class ShardedClusterFixture(interface.Fixture):
         the config server of a sharded cluster.
         """
 
-        logger_name = "%s:configsvr" % (self.logger.name)
+        logger_name = "%s:cfg" % (self.logger.name)
         mongod_logger = logging.loggers.new_logger(logger_name, parent=self.logger)
 
         mongod_options = copy.deepcopy(self.mongod_options)
@@ -219,7 +221,7 @@ class ShardedClusterFixture(interface.Fixture):
         a sharded cluster.
         """
 
-        logger_name = "%s:mongos" % (self.logger.name)
+        logger_name = "%s:s" % (self.logger.name)
         mongos_logger = logging.loggers.new_logger(logger_name, parent=self.logger)
 
         mongos_options = copy.deepcopy(self.mongos_options)
@@ -258,6 +260,8 @@ class _MongoSFixture(interface.Fixture):
     Fixture which provides JSTests with a mongos to connect to.
     """
 
+    SHORT_NAME = "s"
+
     def __init__(self,
                  logger,
                  job_num,
@@ -284,6 +288,7 @@ class _MongoSFixture(interface.Fixture):
         try:
             self.logger.info("Starting mongos on port %d...\n%s", self.port, mongos.as_command())
             mongos.start()
+            self.logger.extra["port"] = self.port
             self.logger.info("mongos started on port %d with pid %d.", self.port, mongos.pid)
         except:
             self.logger.exception("Failed to start mongos on port %d.", self.port)

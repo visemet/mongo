@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import json
 import logging
+import os
 import threading
 import urllib2
 
@@ -14,6 +15,64 @@ from .. import utils
 from ..utils import timer
 
 _TIMEOUT_SECS = 10
+
+
+class MultiFileHandler(logging.Handler):
+    """
+    A container of many logging.FileHandlers, takes a filename pattern, and determines which file
+    to write to based on the log record, creating new logging.FileHandlers as needed.
+    """
+
+    def __init__(self, filename_pattern, log_dir='.', mode='a', encoding=None, delay=0):
+        logging.Handler.__init__(self)
+
+        # Save parameters to be passed to FileHandler constructor later.
+        self.mode = mode
+        self.encoding = encoding
+        self.delay = delay
+
+        if log_dir != '.':
+            try:
+                os.mkdir(log_dir)
+            except OSError:
+                pass  # The directory already exists.
+
+        self.filename_pattern = log_dir + os.sep + filename_pattern
+
+        # maps file name to FileHandler instance. Dynamically created as needed.
+        self.file_handlers = {}
+
+    def emit(self, record):
+        """
+        Emits a record.
+
+        Determine which file this record should go to by formatting the filename_pattern with the
+        attributes defined on the record.
+        """
+
+        filename = self.filename_pattern % record.__dict__
+        file_handler = self.file_handlers.get(filename, None)
+        if file_handler is None:
+            file_handler = logging.FileHandler(filename, self.mode, self.encoding, self.delay)
+            file_handler.setFormatter(self.formatter)
+            self.file_handlers[filename] = file_handler
+
+        file_handler.emit(record)
+
+    def flush(self):
+        """
+        Calls flush on all FileHandlers.
+        """
+        for filename in self.file_handlers:
+            self.file_handlers[filename].flush()
+
+    def close(self):
+        """
+        Calls close on all FileHandlers.
+        """
+        for filename in self.file_handlers:
+            self.file_handlers[filename].close()
+
 
 class BufferedHandler(logging.Handler):
     """

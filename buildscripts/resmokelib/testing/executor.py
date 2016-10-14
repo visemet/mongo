@@ -230,8 +230,14 @@ class TestGroupExecutor(object):
             fixture_config = self.fixture_config.copy()
             fixture_class = fixture_config.pop("class")
 
-        logger_name = "%s:job%d" % (fixture_class, job_num)
-        logger = logging.loggers.new_logger(logger_name, parent=logging.loggers.FIXTURE)
+        logger_name = fixtures.short_name_for_fixture(fixture_class)
+        extra = {
+            "job_num": job_num,
+            "port": "",
+        }
+        logger = logging.loggers.new_logger(logger_name,
+                                            parent=logging.loggers.FIXTURE,
+                                            extra=extra)
         logging.config.apply_buildlogger_global_handler(logger,
                                                         self.logging_config,
                                                         build_id=build_id,
@@ -250,7 +256,7 @@ class TestGroupExecutor(object):
             behavior_config = behavior_config.copy()
             behavior_class = behavior_config.pop("class")
 
-            logger_name = "%s:job%d" % (behavior_class, job_num)
+            logger_name = "%02d:%s" % (job_num, behavior_class)
             logger = logging.loggers.new_logger(logger_name, parent=self.logger)
             behavior = _hooks.make_custom_behavior(behavior_class,
                                                    logger,
@@ -270,8 +276,9 @@ class TestGroupExecutor(object):
         fixture = self._make_fixture(job_num, build_id, build_config)
         hooks = self._make_hooks(job_num, fixture)
 
-        logger_name = "%s:job%d" % (self.logger.name, job_num)
-        logger = logging.loggers.new_logger(logger_name, parent=self.logger)
+        logger_name = "%02d:%s:" % (job_num, self.logger.name)
+        logger = logging.loggers.new_logger(
+            logger_name, parent=self.logger, extra={"job_num": job_num})
 
         if build_id is not None:
             endpoint = logging.buildlogger.APPEND_GLOBAL_LOGS_ENDPOINT % {"build_id": build_id}

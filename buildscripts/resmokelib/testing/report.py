@@ -118,8 +118,11 @@ class TestReport(unittest.TestResult):
                              test_info.url_endpoint)
 
         # Set up the test-specific logger.
+        test.logger.extra["job_num"] = self.logger.extra["job_num"]
+        test.logger.extra["test_name"] = test.short_name()
         logger_name = "%s:%s" % (test.logger.name, test.short_name())
-        logger = logging.loggers.new_logger(logger_name, parent=test.logger)
+        extra = {"test_name": test.short_name()}
+        logger = logging.loggers.new_logger(logger_name, parent=test.logger, extra=extra)
         logging.config.apply_buildlogger_test_handler(logger,
                                                       self.logging_config,
                                                       build_id=self.build_id,
