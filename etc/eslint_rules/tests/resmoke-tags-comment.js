@@ -33,6 +33,17 @@ ruleTester.run("resmoke-tags-comment", rule, {
         },
 
         {
+          code: (function blockCommentSpanningMultipleLines() {
+                    /**
+                     * @tags: [
+                     *   tag1,
+                     *   tag2,
+                     * ]
+                     */
+                }).toString()
+        },
+
+        {
           code: (function basicLineComment() {
                     //
                     // @tags: [tag1, tag2]
