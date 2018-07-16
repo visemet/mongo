@@ -1,0 +1,20 @@
+{
+  "name": "mongodb-eslint-rules",
+  "version": "0.0.0",
+  "description": "Custom ESlint rules for MongoDB's JavaScript integration tests.",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha --recursive tests/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mongodb/mongo.git"
+  },
+  "dependencies": {
+    "eslint": "2.3.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "mocha-eslint": "^4.1.0"
+  },
+  "private": true
+}
