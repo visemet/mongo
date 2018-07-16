@@ -55,9 +55,9 @@ module.exports = {
             const match = JSTEST_TAG_PATTERN.exec(commentLines.join("\n"));
             console.log('match', match);
 
-            let tags;
+            let doc;
             try {
-                tags = yaml.parse(match[1]);
+                doc = yaml.parseDocument(match[1]);
             } catch (e) {
                 // TODO: We should probably re-throw this exception or report a failure using
                 // 'context' still.
@@ -65,10 +65,7 @@ module.exports = {
                 throw e;
             }
 
-            console.log('tags', tags);
-
-            const cst = yaml.parseCST(match[1]);
-            console.log('cst', util.inspect(cst, {showHidden: false, depth: null}));
+            console.log('doc', doc.contents);
         }
 
         const sourceCode = context.getSourceCode();
