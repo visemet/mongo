@@ -23,7 +23,6 @@ var ruleTester = new RuleTester();
 ruleTester.run("resmoke-tags-comment", rule, {
 
     valid: [
-
         {
           code: (function basicBlockComment() {
                     /**
@@ -37,6 +36,21 @@ ruleTester.run("resmoke-tags-comment", rule, {
                     /**
                      * @tags: [
                      *   tag1,
+                     *   tag2,
+                     * ]
+                     */
+                }).toString()
+        },
+
+        {
+          code: (function blockCommentSpanningMultipleLinesWithInlineComments() {
+                    /**
+                     * @tags: [
+                     *   # comment for tags1
+                     *   tag1,
+                     *
+                     *   # multi-line
+                     *   # comment for tags2
                      *   tag2,
                      * ]
                      */

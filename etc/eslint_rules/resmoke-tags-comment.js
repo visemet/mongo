@@ -7,6 +7,8 @@
  */
 "use strict";
 
+const util = require("util");
+
 const yaml = require("yaml").default;
 
 // The LINEBREAK_MATCHER constant is copied from v5.1.0 of the ast-utils library.
@@ -64,6 +66,9 @@ module.exports = {
             }
 
             console.log('tags', tags);
+
+            const cst = yaml.parseCST(match[1]);
+            console.log('cst', util.inspect(cst, {showHidden: false, depth: null}));
         }
 
         const sourceCode = context.getSourceCode();
