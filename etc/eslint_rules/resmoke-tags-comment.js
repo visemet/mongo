@@ -7,7 +7,7 @@
  */
 "use strict";
 
-const yaml = require("js-yaml");
+const yaml = require("yaml").default;
 
 // The LINEBREAK_MATCHER constant is copied from v5.1.0 of the ast-utils library.
 const LINEBREAK_MATCHER = /\r\n|[\r\n\u2028\u2029]/;
@@ -55,16 +55,12 @@ module.exports = {
 
             let tags;
             try {
-                tags = yaml.safeLoad(match[1]);
+                tags = yaml.parse(match[1]);
             } catch (e) {
-                if (!(e instanceof yaml.YAMLException)) {
-                    throw e;
-                }
-
                 // TODO: We should probably re-throw this exception or report a failure using
                 // 'context' still.
                 console.error("Found invalid YAML when parsing @tags comment: " + e.message);
-                return;
+                throw e;
             }
 
             console.log('tags', tags);
