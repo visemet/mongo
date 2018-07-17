@@ -21,13 +21,18 @@ module.exports = {
             recommended: false
         },
         fixable: "whitespace",
-        schema: [
-            // fill in your schema
-        ]
+        schema: [{
+            type: "object",
+            properties: {
+                $_internalAddTag: "string",
+                $_internalRemoveTag: "string",
+            },
+            required: [],
+            additionalProperties: false,
+        }]
     },
 
     create: (context) => {
-
         // variables should be defined here
 
         const sourceCode = context.getSourceCode();
@@ -85,6 +90,8 @@ module.exports = {
         return {
 
             Program() {
+                console.log('options', context.options);
+
                 // TODO: Check for /@tags\s*:/ in any of the lines to know if we should just skip
                 // doing all of this work altogether.
 
