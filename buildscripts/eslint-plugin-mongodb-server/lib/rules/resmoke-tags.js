@@ -3,6 +3,7 @@
  */
 "use strict";
 
+const jsdiff = require("diff");
 const yaml = require("yaml").default;
 
 // The LINEBREAK_MATCHER constant is copied from v5.1.0 of the ast-utils library.
@@ -126,8 +127,9 @@ module.exports = {
 
             const lineStart = (commentJoined.substring(0, match.index).match(/\n/g) || []).length;
             const numLines = (match[1].match(/\n/g) || []).length;
-            console.log(
-                'lineStart', lineStart, commentLines.slice(lineStart, lineStart + numLines + 1));
+
+            const oldArray = commentLines.slice(lineStart, lineStart + numLines + 1);
+            console.log('lineStart', lineStart, oldArray);
 
             let doc;
             try {
@@ -165,6 +167,20 @@ module.exports = {
             console.log('converted """',
                         convertToStarredBlock(getInitialOffset(commentGroup[0]), tags),
                         '"""');
+
+            const newArray = convertToPaddedCommentList(getInitialOffset(commentGroup[0]), tags);
+            const diff = jsdiff.diffArrays(oldArray, newArray);
+            console.log('diffArrays', diff);
+
+            if (diff.length > 1) {
+                context.report({
+                    loc: {
+                        start: commentGroup[0].loc.start,
+                        end: commentGroup[commentGroup.length - 1].loc.end
+                    },
+                    message: "Style doesn't match",
+                });
+            }
         }
 
         //----------------------------------------------------------------------
