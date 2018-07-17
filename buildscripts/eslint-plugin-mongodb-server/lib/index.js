@@ -1,6 +1,5 @@
 /**
- * @fileoverview Custom ESlint rules for MongoDB&#39;s JavaScript integration tests.
- * @author Max Hirschhorn
+ * @fileoverview Custom ESlint rules for MongoDB's JavaScript integration tests.
  */
 "use strict";
 
@@ -14,9 +13,5 @@ var requireIndex = require("requireindex");
 // Plugin Definition
 //------------------------------------------------------------------------------
 
-
 // import all rules in lib/rules
 module.exports.rules = requireIndex(__dirname + "/rules");
-
-
-

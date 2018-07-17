@@ -1,6 +1,6 @@
 # eslint-plugin-mongodb-server
 
-Custom ESlint rules for MongoDB&#39;s JavaScript integration tests.
+Custom ESlint rules for MongoDB's JavaScript integration tests.
 
 ## Installation
 
