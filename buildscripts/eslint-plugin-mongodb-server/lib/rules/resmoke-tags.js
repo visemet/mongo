@@ -80,6 +80,54 @@ module.exports = {
             }
 
             console.log('doc', doc.contents);
+
+            if (doc.contents.items.length === 0) {
+                // TODO: Use context.report() here to propagate this as an error.
+                console.error("tags list should not be empty");
+                return;
+            }
+
+            // TODO: We need to subtract the starting offset of the comment plus some additional
+            // whitespace and comment markers.
+            const wrap = require("wordwrap")(100);
+
+            const tags = [];
+
+            for (let tagNode of doc.contents.items) {
+                const tagInfo = {name: tagNode.value};
+
+                if (tagNode.commentBefore !== undefined) {
+                    const comment = tagNode.commentBefore.split(/\r?\n/)
+                                        .map(commentLine => commentLine.trimStart())
+                                        .join(" ");
+                    console.log('unwrapped version """', comment, '"""');
+                    console.log('wrapped version """', wrap(comment), '"""');
+
+                    tagInfo.comment = comment;
+                }
+
+                tags.push(tagInfo);
+            }
+
+            let text = "";
+            for (let i = 0; i < tags.length; ++i) {
+                const tagInfo = tags[i];
+
+                if (tagInfo.comment !== undefined) {
+                    if (i > 0) {
+                        text += "\n";
+                    }
+
+                    text += "# ";
+                    text += wrap(tagInfo.comment);
+                    text += "\n";
+                }
+
+                text += tagInfo.name;
+                text += ",\n";
+            }
+
+            console.log('text """', text, '"""');
         }
 
         //----------------------------------------------------------------------
