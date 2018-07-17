@@ -16,6 +16,7 @@
     "url": "git@github.com:mongodb/mongo.git"
   },
   "dependencies": {
+    "commander": "2.16.0",
     "requireindex": "1.1.0",
     "yaml": "1.0.0-rc.7"
   },
