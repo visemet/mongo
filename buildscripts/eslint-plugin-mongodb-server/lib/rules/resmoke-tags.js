@@ -72,9 +72,14 @@ module.exports = {
             const initialOffset = sourceCode.text.slice(
                 firstComment.range[0] - firstComment.loc.start.column, firstComment.range[0]);
 
+            const columnWidth = 100;
+            const indentSize = 2;
+            const indent = `${" ".repeat(indentSize)}`;
+            const commentPrefix = `${indent} # `;
+
             // TODO: We need to subtract the starting offset of the comment plus some additional
             // whitespace and comment markers.
-            const wrap = require("wordwrap")(100 - initialOffset - " # ".length);
+            const wrap = require("wordwrap")(columnWidth - initialOffset - commentPrefix.length);
 
             const commentLinesList = [];
             for (let i = 0; i < tags.length; ++i) {
@@ -86,11 +91,11 @@ module.exports = {
                     }
 
                     for (let line of wrap(tagInfo.comment).split(/\r?\n/)) {
-                        commentLinesList.push(` # ${line}`);
+                        commentLinesList.push(`${commentPrefix}${line}`);
                     }
                 }
 
-                commentLinesList.push(` ${tagInfo.name},`);
+                commentLinesList.push(` ${indent}${tagInfo.name},`);
             }
 
             const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
