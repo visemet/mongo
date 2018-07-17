@@ -75,13 +75,14 @@ module.exports = {
             const columnWidth = 100;
             const indentSize = 2;
             const indent = `${" ".repeat(indentSize)}`;
-            const commentPrefix = `${indent} # `;
+            const commentPrefix = ` ${indent}# `;
 
             // TODO: We need to subtract the starting offset of the comment plus some additional
             // whitespace and comment markers.
             const wrap = require("wordwrap")(columnWidth - initialOffset - commentPrefix.length);
 
-            const commentLinesList = [];
+            const commentLinesList = [" @tags: ["];
+
             for (let i = 0; i < tags.length; ++i) {
                 const tagInfo = tags[i];
 
@@ -97,6 +98,8 @@ module.exports = {
 
                 commentLinesList.push(` ${indent}${tagInfo.name},`);
             }
+
+            commentLinesList.push(" ]");
 
             const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
 
