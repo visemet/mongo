@@ -100,6 +100,7 @@ module.exports = {
             }
 
             commentLinesList.push(" ]");
+            console.log('commentsLineList', commentLinesList);
 
             const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
 
