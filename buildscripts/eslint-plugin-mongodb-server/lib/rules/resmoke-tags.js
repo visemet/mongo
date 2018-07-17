@@ -59,25 +59,22 @@ module.exports = {
                 .map(line => line.replace(/^\s*\*?/, ""));
         }
 
-        function getInitialOffset(firstComment) {
-            return sourceCode.text.slice(firstComment.range[0] - firstComment.loc.start.column,
-                                         firstComment.range[0]);
-        }
-
         /**
-         * Converts a comment into starred-block form
-         * @param {Token} firstComment The first comment of the group being converted
-         * @param {string[]} commentLinesList A list of lines to appear in the new starred-block
-         * comment
-         * @returns {string} A representation of the comment value in starred-block form, excluding
-         * start and end markers
+         * Converts a comment into starred-block form.
          *
-         * TODO: Update this doc comment to explain `tags` parameter instead of `commentLinesList`.
+         * @param {number} initialOffset The amount of whitespace to precede each line of the
+         * comment group with.
+         *
+         * @param {string[]} commentLinesList A list of lines to appear in the new starred-block
+         * comment.
+         *
+         * @returns {string} A representation of the comment value in starred-block form, excluding
+         * start and end markers.
          */
-        function convertToStarredBlock(initialOffset, tags) {
-            const commentLinesList = convertToPaddedCommentList(initialOffset, tags);
-            const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
-            return `\n${starredLines.join("\n")}\n${initialOffset} `;
+        function convertToStarredBlock(initialOffset, commentLinesList) {
+            const prefix = `${" ".repeat(initialOffset)}`;
+            const starredLines = commentLinesList.map(line => `${prefix} *${line}`);
+            return `\n${starredLines.join("\n")}\n${prefix} `;
         }
 
         function convertToPaddedCommentList(initialOffset, tags) {
@@ -112,14 +109,11 @@ module.exports = {
         }
 
         function checkCommentGroup(commentGroup) {
-            console.log('commentGroup[0]', commentGroup[0]);
-
             const commentLines = getCommentLines(commentGroup);
             console.log('commentLines', commentLines);
 
             const commentJoined = commentLines.join("\n");
             const match = JSTEST_TAG_PATTERN.exec(commentJoined);
-            console.log('match', match);
 
             if (match === null) {
                 return;
@@ -127,9 +121,8 @@ module.exports = {
 
             const lineStart = (commentJoined.substring(0, match.index).match(/\n/g) || []).length;
             const numLines = (match[1].match(/\n/g) || []).length;
-
-            const oldArray = commentLines.slice(lineStart, lineStart + numLines + 1);
-            console.log('lineStart', lineStart, oldArray);
+            const lineEnd = lineStart + numLines + 1;
+            const oldArray = commentLines.slice(lineStart, lineEnd);
 
             let doc;
             try {
@@ -140,8 +133,6 @@ module.exports = {
                 console.error("Found invalid YAML when parsing @tags comment: " + e.message);
                 throw e;
             }
-
-            console.log('doc', doc.contents);
 
             if (doc.contents.items.length === 0) {
                 // TODO: Use context.report() here to propagate this as an error.
@@ -164,19 +155,26 @@ module.exports = {
                 tags.push(tagInfo);
             }
 
-            console.log('initialOffset', getInitialOffset(commentGroup[0]).length);
-            console.log('converted """',
-                        convertToStarredBlock(getInitialOffset(commentGroup[0]), tags),
-                        '"""');
+            const initialOffset = commentGroup[0].loc.start.column;
+            console.log('initialOffset', initialOffset);
 
-            const newArray =
-                convertToPaddedCommentList(getInitialOffset(commentGroup[0]).length, tags);
+            const newArray = convertToPaddedCommentList(initialOffset, tags);
             console.log('newArray', newArray);
 
             const diff = jsdiff.diffArrays(oldArray, newArray);
             console.log('diffArrays', diff);
 
             if (diff.length > 1) {
+                const commentLinesList = [].concat(
+                    commentLines.slice(0, lineStart), newArray, commentLines.slice(lineEnd));
+
+                const starredBlock =
+                    `/*${convertToStarredBlock(initialOffset, commentLinesList)}*/`;
+                console.log('converted """', starredBlock, '"""');
+                console.log('original """',
+                            `/*${convertToStarredBlock(initialOffset, commentLines)}*/`,
+                            '"""');
+
                 context.report({
                     loc: {
                         start: commentGroup[0].loc.start,
@@ -189,10 +187,7 @@ module.exports = {
                             commentGroup[commentGroup.length - 1].range[1]
                         ];
 
-                        // TODO: Just using newArray isn't sufficient because we lose the parts
-                        // before and after the @tags section.
-                        return fixer.replaceTextRange(
-                            range, convertToStarredBlock(getInitialOffset(commentGroup[0]), tags));
+                        return fixer.replaceTextRange(range, starredBlock);
                     }
                 });
             }
