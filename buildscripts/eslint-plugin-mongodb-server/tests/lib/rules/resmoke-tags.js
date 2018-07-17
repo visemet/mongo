@@ -36,7 +36,7 @@ ruleTester.run("resmoke-tags", rule, {
                      *   # comment for tags1
                      *   tag1,
                      *
-                     *   # multi-line
+                     *   # multi-line < . . . . . . . . . . . . . . . . . . . . . . . filler text >
                      *   # comment for tags2
                      *   tag2,
                      * ]
@@ -75,7 +75,7 @@ ruleTester.run("resmoke-tags", rule, {
                     //   # comment for tags1
                     //   tag1,
                     //
-                    //   # multi-line
+                    //   # multi-line < . . . . . . . . . . . . . . . . . . . . . . . filler text >
                     //   # comment for tags2
                     //   tag2,
                     // ]
