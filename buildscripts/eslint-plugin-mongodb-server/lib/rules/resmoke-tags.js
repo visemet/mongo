@@ -58,6 +58,46 @@ module.exports = {
                 .map(line => line.replace(/^\s*\*?/, ""));
         }
 
+        /**
+         * Converts a comment into starred-block form
+         * @param {Token} firstComment The first comment of the group being converted
+         * @param {string[]} commentLinesList A list of lines to appear in the new starred-block
+         * comment
+         * @returns {string} A representation of the comment value in starred-block form, excluding
+         * start and end markers
+         *
+         * TODO: Update this doc comment to explain `tags` parameter instead of `commentLinesList`.
+         */
+        function convertToStarredBlock(firstComment, tags) {
+            const initialOffset = sourceCode.text.slice(
+                firstComment.range[0] - firstComment.loc.start.column, firstComment.range[0]);
+
+            // TODO: We need to subtract the starting offset of the comment plus some additional
+            // whitespace and comment markers.
+            const wrap = require("wordwrap")(100 - initialOffset - " # ".length);
+
+            const commentLinesList = [];
+            for (let i = 0; i < tags.length; ++i) {
+                const tagInfo = tags[i];
+
+                if (tagInfo.comment !== undefined) {
+                    if (i > 0) {
+                        commentLinesList.push("");
+                    }
+
+                    for (let line of wrap(tagInfo.comment).split(/\r?\n/)) {
+                        commentLinesList.push(` # ${line}`);
+                    }
+                }
+
+                commentLinesList.push(` ${tagInfo.name},`);
+            }
+
+            const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
+
+            return `\n${starredLines.join("\n")}\n${initialOffset} `;
+        }
+
         function checkCommentGroup(commentGroup) {
             const commentLines = getCommentLines(commentGroup);
             console.log('commentLines', commentLines);
@@ -87,10 +127,6 @@ module.exports = {
                 return;
             }
 
-            // TODO: We need to subtract the starting offset of the comment plus some additional
-            // whitespace and comment markers.
-            const wrap = require("wordwrap")(100);
-
             const tags = [];
 
             for (let tagNode of doc.contents.items) {
@@ -100,34 +136,13 @@ module.exports = {
                     const comment = tagNode.commentBefore.split(/\r?\n/)
                                         .map(commentLine => commentLine.trimStart())
                                         .join(" ");
-                    console.log('unwrapped version """', comment, '"""');
-                    console.log('wrapped version """', wrap(comment), '"""');
-
                     tagInfo.comment = comment;
                 }
 
                 tags.push(tagInfo);
             }
 
-            let text = "";
-            for (let i = 0; i < tags.length; ++i) {
-                const tagInfo = tags[i];
-
-                if (tagInfo.comment !== undefined) {
-                    if (i > 0) {
-                        text += "\n";
-                    }
-
-                    text += "# ";
-                    text += wrap(tagInfo.comment);
-                    text += "\n";
-                }
-
-                text += tagInfo.name;
-                text += ",\n";
-            }
-
-            console.log('text """', text, '"""');
+            console.log('converted """', convertToStarredBlock(commentGroup[0], tags), '"""');
         }
 
         //----------------------------------------------------------------------
