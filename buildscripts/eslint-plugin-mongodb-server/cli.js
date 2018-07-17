@@ -20,16 +20,6 @@ program.command("add-tag <tag> [files...]")
             fix: true,
         });
 
-        // console.log('messages',
-        //             cli.executeOnText((function basicBlockComment() {
-        //                                   /**
-        //                                    * @tags: [tag1, tag2]
-        //                                    */
-        //                               }).toString(),
-        //                               "foo.js")
-        //                 .results[0]
-        //                 .messages);
-
         const result = cli.executeOnFiles(files);
         if (result.errorCount > 0) {
             console.error(result.results[0].messages);
