@@ -1,5 +1,6 @@
 const program = require("commander");
 
+const CLIEngine = require('eslint').CLIEngine;
 const plugins = require("eslint/lib/config/plugins");
 
 program.command("add-tag <tag> [files...]")
@@ -7,8 +8,6 @@ program.command("add-tag <tag> [files...]")
     .option("-m|--message [message]", "Optional message to include as a comment for the tag")
     .action((tag, files) => {
         console.log("add-tag", tag, files);
-
-        var CLIEngine = require('eslint').CLIEngine;
 
         // XXX: Omitting `plugins.load("mongodb-server")` causes the schema of the rules' options to
         // not get validated for some reason.
