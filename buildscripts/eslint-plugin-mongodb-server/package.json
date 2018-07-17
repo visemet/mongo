@@ -7,20 +7,27 @@
     "eslintplugin",
     "eslint-plugin"
   ],
-  "author": "Max Hirschhorn",
   "main": "lib/index.js",
   "scripts": {
-    "test": "mocha tests --recursive"
+    "test": "node ./node_modules/mocha/bin/mocha --recursive tests/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mongodb/mongo.git"
   },
   "dependencies": {
     "requireindex": "~1.1.0"
   },
   "devDependencies": {
-    "eslint": "~3.9.1",
-    "mocha": "^3.1.2"
+    "eslint": "2.3.0",
+    "mocha": "^5.2.0"
+  },
+  "peerDependencies": {
+    "eslint": ">=0.8.0"
   },
   "engines": {
     "node": ">=0.10.0"
   },
-  "license": "ISC"
+  "license": "Apache-2.0",
+  "private": true
 }
