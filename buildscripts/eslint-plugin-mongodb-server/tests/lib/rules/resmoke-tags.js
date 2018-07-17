@@ -86,21 +86,51 @@ ruleTester.run("resmoke-tags", rule, {
 
     invalid: [
         {
-          code: (function missingSpaceBetweenTags() {
-                    /**
-                     * @tags: [tag1,tag2]
-                     */
-                }).toString(),
+          code:  //
+              (function missingSpaceBetweenTags() {
+                  /**
+                   * @tags: [tag1,tag2]
+                   */
+              }).toString(),
 
           errors: 1,
-          output: (function missingSpaceBetweenTags() {
-                      /**
-                       * @tags: [
-                       *   tag1,
-                       *   tag2,
-                       * ]
-                       */
-                  }).toString()
+          output:  //
+              (function missingSpaceBetweenTags() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag2,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code:  //
+              (function missingSpaceBetweenTagsWithSurroundingComments() {
+                  /**
+                   * This comment is unrelated to the tags.
+                   *
+                   * @tags: [tag1,tag2]
+                   *
+                   * This comment is also unrelated to the tags.
+                   */
+              }).toString(),
+
+          errors: 1,
+          output:  //
+              (function missingSpaceBetweenTagsWithSurroundingComments() {
+                  /**
+                   * This comment is unrelated to the tags.
+                   *
+                   * @tags: [
+                   *   tag1,
+                   *   tag2,
+                   * ]
+                   *
+                   * This comment is also unrelated to the tags.
+                   */
+              }).toString()
         },
 
         {

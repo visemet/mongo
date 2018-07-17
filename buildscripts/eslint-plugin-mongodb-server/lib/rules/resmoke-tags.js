@@ -165,6 +165,9 @@ module.exports = {
             console.log('diffArrays', diff);
 
             if (diff.length > 1) {
+                // XXX: Is there a different way we could have split up 'commentLines' so we don't
+                // have to remove the empty string elements at the very beginning and at the very
+                // end?
                 const commentLinesList =
                     [].concat(commentLines.slice(1, lineStart),
                               newArray,
