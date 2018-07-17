@@ -24,10 +24,9 @@ module.exports = {
         schema: [{
             type: "object",
             properties: {
-                $_internalAddTag: "string",
-                $_internalRemoveTag: "string",
+                $_internalAddTag: {type: "string"},
+                $_internalRemoveTag: {type: "string"},
             },
-            required: [],
             additionalProperties: false,
         }]
     },
