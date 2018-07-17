@@ -45,6 +45,19 @@ ruleTester.run("resmoke-tags", rule, {
         },
 
         {
+          code: (function blockCommentSpanningMultipleLinesWithHeaderComment() {
+                    /**
+                     * This comment is unrelated to the tags.
+                     *
+                     * @tags: [
+                     *   tag1,
+                     *   tag2,
+                     * ]
+                     */
+                }).toString()
+        },
+
+        {
           code: (function lineCommentSpanningMultipleLines() {
                     //
                     // @tags: [

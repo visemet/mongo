@@ -107,15 +107,23 @@ module.exports = {
         }
 
         function checkCommentGroup(commentGroup) {
+            console.log('commentGroup[0]', commentGroup[0]);
+
             const commentLines = getCommentLines(commentGroup);
             console.log('commentLines', commentLines);
 
-            const match = JSTEST_TAG_PATTERN.exec(commentLines.join("\n"));
+            const commentJoined = commentLines.join("\n");
+            const match = JSTEST_TAG_PATTERN.exec(commentJoined);
             console.log('match', match);
 
             if (match === null) {
                 return;
             }
+
+            const lineStart = (commentJoined.substring(0, match.index).match(/\n/g) || []).length;
+            const numLines = (match[1].match(/\n/g) || []).length;
+            console.log(
+                'lineStart', lineStart, commentLines.slice(lineStart, lineStart + numLines + 1));
 
             let doc;
             try {
