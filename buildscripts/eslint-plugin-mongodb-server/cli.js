@@ -6,8 +6,8 @@ const plugins = require("eslint/lib/config/plugins");
 program.command("add-tag <tag> [files...]")
     .description("Adds the resmoke.py tag to the list of files")
     .option("-m|--message [message]", "Optional message to include as a comment for the tag")
-    .action((tag, files) => {
-        console.log("add-tag", tag, files);
+    .action((tag, files, cmd) => {
+        console.log("add-tag", tag, files, cmd.message);
 
         // XXX: Omitting `plugins.load("mongodb-server")` causes the schema of the rules' options to
         // not get validated for some reason.
