@@ -16,7 +16,8 @@
     "url": "git@github.com:mongodb/mongo.git"
   },
   "dependencies": {
-    "requireindex": "~1.1.0"
+    "requireindex": "~1.1.0",
+    "yaml": "1.0.0-rc.7"
   },
   "devDependencies": {
     "eslint": "2.3.0",
