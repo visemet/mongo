@@ -19,14 +19,6 @@ ruleTester.run("resmoke-tags", rule, {
 
     valid: [
         {
-          code: (function basicBlockComment() {
-                    /**
-                     * @tags: [tag1, tag2]
-                     */
-                }).toString()
-        },
-
-        {
           code: (function blockCommentSpanningMultipleLines() {
                     /**
                      * @tags: [
@@ -53,13 +45,70 @@ ruleTester.run("resmoke-tags", rule, {
         },
 
         {
-          code: (function basicLineComment() {
+          code: (function lineCommentSpanningMultipleLines() {
                     //
-                    // @tags: [tag1, tag2]
+                    // @tags: [
+                    //   tag1,
+                    //   tag2,
+                    // ]
                     //
                 }).toString()
-        }
+        },
+
+        {
+          code: (function lineCommentSpanningMultipleLinesWithInlineComments() {
+                    //
+                    // @tags: [
+                    //   # comment for tags1
+                    //   tag1,
+                    //
+                    //   # multi-line
+                    //   # comment for tags2
+                    //   tag2,
+                    // ]
+                    //
+                }).toString()
+        },
     ],
 
-    invalid: [],
+    invalid: [
+        {
+          code: (function missingSpaceBetweenTags() {
+                    /**
+                     * @tags: [tag1,tag2]
+                     */
+                }).toString(),
+
+          errors: 1,
+          output: (function missingSpaceBetweenTags() {
+                      /**
+                       * @tags: [
+                       *   tag1,
+                       *   tag2,
+                       * ]
+                       */
+                  }).toString()
+        },
+
+        {
+          code: (function missingTrailingComma() {
+                    //
+                    // @tags: [
+                    //   tag1,
+                    //   tag2
+                    // ]
+                    //
+                }).toString(),
+
+          errors: 1,
+          output: (function missingTrailingComma() {
+                      //
+                      // @tags: [
+                      //   tag1,
+                      //   tag2,
+                      // ]
+                      //
+                  }).toString()
+        },
+    ],
 });
