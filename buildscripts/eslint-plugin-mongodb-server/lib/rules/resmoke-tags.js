@@ -58,6 +58,11 @@ module.exports = {
                 .map(line => line.replace(/^\s*\*?/, ""));
         }
 
+        function getInitialOffset(firstComment) {
+            return sourceCode.text.slice(firstComment.range[0] - firstComment.loc.start.column,
+                                         firstComment.range[0]);
+        }
+
         /**
          * Converts a comment into starred-block form
          * @param {Token} firstComment The first comment of the group being converted
@@ -68,17 +73,19 @@ module.exports = {
          *
          * TODO: Update this doc comment to explain `tags` parameter instead of `commentLinesList`.
          */
-        function convertToStarredBlock(firstComment, tags) {
-            const initialOffset = sourceCode.text.slice(
-                firstComment.range[0] - firstComment.loc.start.column, firstComment.range[0]);
+        function convertToStarredBlock(initialOffset, tags) {
+            const commentLinesList = convertToPaddedCommentList(initialOffset, tags);
+            const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
+            return `\n${starredLines.join("\n")}\n${initialOffset} `;
+        }
 
+        function convertToPaddedCommentList(initialOffset, tags) {
+            // TODO: Consider making some of these configurable.
             const columnWidth = 100;
             const indentSize = 2;
             const indent = `${" ".repeat(indentSize)}`;
             const commentPrefix = ` ${indent}# `;
 
-            // TODO: We need to subtract the starting offset of the comment plus some additional
-            // whitespace and comment markers.
             const wrap = require("wordwrap")(columnWidth - initialOffset - commentPrefix.length);
 
             const commentLinesList = [" @tags: ["];
@@ -100,11 +107,7 @@ module.exports = {
             }
 
             commentLinesList.push(" ]");
-            console.log('commentsLineList', commentLinesList);
-
-            const starredLines = commentLinesList.map(line => `${initialOffset} *${line}`);
-
-            return `\n${starredLines.join("\n")}\n${initialOffset} `;
+            return commentLinesList;
         }
 
         function checkCommentGroup(commentGroup) {
@@ -159,7 +162,9 @@ module.exports = {
                 tags.push(tagInfo);
             }
 
-            console.log('converted """', convertToStarredBlock(commentGroup[0], tags), '"""');
+            console.log('converted """',
+                        convertToStarredBlock(getInitialOffset(commentGroup[0]), tags),
+                        '"""');
         }
 
         //----------------------------------------------------------------------
