@@ -61,6 +61,10 @@ module.exports = {
             const match = JSTEST_TAG_PATTERN.exec(commentLines.join("\n"));
             console.log('match', match);
 
+            if (match === null) {
+                return;
+            }
+
             let doc;
             try {
                 doc = yaml.parseDocument(match[1]);
