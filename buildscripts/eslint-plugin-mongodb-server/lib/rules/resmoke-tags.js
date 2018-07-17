@@ -31,7 +31,7 @@ module.exports = {
         }]
     },
 
-    create: (context) => {
+    create(context) {
         // variables should be defined here
 
         const sourceCode = context.getSourceCode();
