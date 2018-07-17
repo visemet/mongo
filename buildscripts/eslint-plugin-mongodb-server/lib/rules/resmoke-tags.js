@@ -183,6 +183,17 @@ module.exports = {
                         end: commentGroup[commentGroup.length - 1].loc.end
                     },
                     message: "Style doesn't match",
+                    fix(fixer) {
+                        const range = [
+                            commentGroup[0].range[0],
+                            commentGroup[commentGroup.length - 1].range[1]
+                        ];
+
+                        // TODO: Just using newArray isn't sufficient because we lose the parts
+                        // before and after the @tags section.
+                        return fixer.replaceTextRange(
+                            range, convertToStarredBlock(getInitialOffset(commentGroup[0]), tags));
+                    }
                 });
             }
         }
