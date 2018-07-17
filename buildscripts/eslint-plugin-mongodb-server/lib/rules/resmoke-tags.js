@@ -164,11 +164,15 @@ module.exports = {
                 tags.push(tagInfo);
             }
 
+            console.log('initialOffset', getInitialOffset(commentGroup[0]).length);
             console.log('converted """',
                         convertToStarredBlock(getInitialOffset(commentGroup[0]), tags),
                         '"""');
 
-            const newArray = convertToPaddedCommentList(getInitialOffset(commentGroup[0]), tags);
+            const newArray =
+                convertToPaddedCommentList(getInitialOffset(commentGroup[0]).length, tags);
+            console.log('newArray', newArray);
+
             const diff = jsdiff.diffArrays(oldArray, newArray);
             console.log('diffArrays', diff);
 
