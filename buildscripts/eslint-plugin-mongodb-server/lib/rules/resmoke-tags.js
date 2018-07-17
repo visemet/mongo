@@ -165,11 +165,13 @@ module.exports = {
             console.log('diffArrays', diff);
 
             if (diff.length > 1) {
-                const commentLinesList = [].concat(
-                    commentLines.slice(0, lineStart), newArray, commentLines.slice(lineEnd));
+                const commentLinesList =
+                    [].concat(commentLines.slice(1, lineStart),
+                              newArray,
+                              commentLines.slice(lineEnd, commentLines.length - 1));
 
                 const starredBlock =
-                    `/*${convertToStarredBlock(initialOffset, commentLinesList)}*/`;
+                    `/**${convertToStarredBlock(initialOffset, commentLinesList)}*/`;
                 console.log('converted """', starredBlock, '"""');
                 console.log('original """',
                             `/*${convertToStarredBlock(initialOffset, commentLines)}*/`,
