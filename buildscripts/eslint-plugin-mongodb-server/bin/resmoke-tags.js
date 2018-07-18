@@ -31,6 +31,10 @@ program.command("add-tag <tag> [files...]")
         }
 
         lint(files, ["error", {$_internalAddTag: options}]);
+    })
+    .on("--help", () => {
+        console.log("\n  Note: The comment for the tag will be updated exist if the tag already" +
+                    " exists in the file.");
     });
 
 program.command("remove-tag <tag> [files...]")
