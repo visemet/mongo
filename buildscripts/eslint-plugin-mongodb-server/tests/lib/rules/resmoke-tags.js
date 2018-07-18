@@ -82,6 +82,20 @@ ruleTester.run("resmoke-tags", rule, {
                     //
                 }).toString()
         },
+
+        {
+          code: (function addingTagAlreadyPresent() {
+                    /**
+                     * @tags: [
+                     *   tag1,
+                     *   tag2,
+                     *   tag3,
+                     * ]
+                     */
+                }).toString(),
+
+          options: [{$_internalAddTag: {tag: "tag2"}}],
+        },
     ],
 
     invalid: [
@@ -185,7 +199,7 @@ ruleTester.run("resmoke-tags", rule, {
 
         {
           code:  //
-              (function addingTag2() {
+              (function addingNewTag() {
                   /**
                    * @tags: [
                    *   tag1,
@@ -197,7 +211,7 @@ ruleTester.run("resmoke-tags", rule, {
 
           errors: 1,
           output:  //
-              (function addingTag2() {
+              (function addingNewTag() {
                   /**
                    * @tags: [
                    *   tag1,
@@ -210,7 +224,7 @@ ruleTester.run("resmoke-tags", rule, {
 
         {
           code:  //
-              (function addingTag2WithAComment() {
+              (function addingNewTagWithAComment() {
                   /**
                    * @tags: [
                    *   tag1,
@@ -222,7 +236,7 @@ ruleTester.run("resmoke-tags", rule, {
 
           errors: 1,
           output:  //
-              (function addingTag2WithAComment() {
+              (function addingNewTagWithAComment() {
                   /**
                    * @tags: [
                    *   tag1,
