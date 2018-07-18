@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 
+const util = require("util");
+
 const program = require("commander");
 const CLIEngine = require('eslint').CLIEngine;
 
 function lint(files, ruleOptions) {
     const cli = new CLIEngine({
+        // We don't use the top-level .eslintrc.yml file but we still enable ES6 features and
+        // MongoDB global variables ourselves.
+        useEslintrc: false,
+        envs: ["es6", "mongo"],
+
         plugins: ["mongodb-server"],
         rules: {"mongodb-server/resmoke-tags": ruleOptions},
         fix: true,
@@ -13,7 +20,12 @@ function lint(files, ruleOptions) {
     const report = cli.executeOnFiles(files);
     if (report.errorCount > 0) {
         // We don't attempt to make changes to the specified files if there are non-fixable errors.
-        console.error(report.results[0].messages);
+        console.error(util.inspect(report, {
+            showHidden: false,
+            depth: null,
+            colors: true,
+            maxArrayLength: null,
+        }));
         process.exit(2);
     }
 
@@ -53,7 +65,20 @@ program.command("list-tags [files...]")
     .description("Lists the resmoke.py tags used in the list of files")
     .action((files) => {
         const report = lint(files, ["warn", {$_internalListTags: null}]);
-        console.log(report);
+        const allTags = new Set();
+        for (let result of report.results) {
+            if (result.messages.length === 0) {
+                continue;
+            }
+
+            for (let tag of JSON.parse(result.messages[0].message)) {
+                allTags.add(tag);
+            }
+        }
+
+        for (let tag of allTags) {
+            console.log(tag);
+        }
     });
 
 program.parse(process.argv);

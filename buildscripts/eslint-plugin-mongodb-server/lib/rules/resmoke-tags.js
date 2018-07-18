@@ -156,7 +156,6 @@ module.exports = {
 
         function checkCommentGroup(commentGroup) {
             const commentLines = getCommentLines(commentGroup);
-            console.log('commentLines', commentLines);
 
             const commentJoined = commentLines.join("\n");
             const match = JSTEST_TAG_PATTERN.exec(commentJoined);
@@ -214,6 +213,18 @@ module.exports = {
                 }
             }
 
+            if (options.$_internalListTags !== undefined) {
+                context.report({
+                    loc: {
+                        start: commentGroup[0].loc.start,
+                        end: commentGroup[commentGroup.length - 1].loc.end
+                    },
+                    message: "{{ tags }}",
+                    data: {tags: JSON.stringify(Array.from(tagsByName.keys()))},
+                });
+                return;
+            }
+
             if (options.$_internalRemoveTag !== undefined) {
                 if (tagsByName.has(options.$_internalRemoveTag)) {
                     tagsByName.delete(options.$_internalRemoveTag);
@@ -250,30 +261,13 @@ module.exports = {
             }
 
             const initialOffset = commentGroup[0].loc.start.column;
-            console.log('initialOffset', initialOffset);
-
             const newArray = convertToPaddedCommentList(
                 initialOffset,
                 Array.from(tagsByName.values())
                     .sort((tagNode1, tagNode2) => tagNode1.value.localeCompare(tagNode2.value)));
 
-            console.log('newArray', newArray);
-
             const diff = jsdiff.diffArrays(oldArray, newArray);
-            console.log('diffArrays', diff);
-
             if (diff.length > 1) {
-                // XXX: Is there a different way we could have split up 'commentLines' so we don't
-                // have to remove the empty string elements at the very beginning and at the very
-                // end?
-                const commentLinesList = [].concat(
-                    commentLines.slice(0, lineStart), newArray, commentLines.slice(lineEnd));
-
-                const starredBlock = convertToStarredBlock(initialOffset, commentLinesList);
-                console.log('converted """', starredBlock, '"""');
-                console.log(
-                    'original """', convertToStarredBlock(initialOffset, commentLines), '"""');
-
                 context.report({
                     loc: {
                         start: commentGroup[0].loc.start,
@@ -285,6 +279,10 @@ module.exports = {
                             commentGroup[0].range[0] - initialOffset,
                             commentGroup[commentGroup.length - 1].range[1]
                         ];
+
+                        const commentLinesList = [].concat(commentLines.slice(0, lineStart),
+                                                           newArray,
+                                                           commentLines.slice(lineEnd));
 
                         const newComment =
                             ((commentGroup[0].type === "Line")
@@ -304,8 +302,6 @@ module.exports = {
         return {
 
             Program() {
-                console.log('options', context.options);
-
                 // TODO: Check for /@tags\s*:/ in any of the lines to know if we should just skip
                 // doing all of this work altogether.
 
