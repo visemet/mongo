@@ -155,5 +155,32 @@ ruleTester.run("resmoke-tags", rule, {
                   //
               }).toString()
         },
+
+        {
+          code:  //
+              (function missingTrailingCommaWithSurroundingComments() {
+                  // This comment is unrelated to the tags.
+                  //
+                  // @tags: [
+                  //   tag1,
+                  //   tag2
+                  // ]
+                  //
+                  // This comment is also unrelated to the tags.
+              }).toString(),
+
+          errors: 1,
+          output:  //
+              (function missingTrailingCommaWithSurroundingComments() {
+                  // This comment is unrelated to the tags.
+                  //
+                  // @tags: [
+                  //   tag1,
+                  //   tag2,
+                  // ]
+                  //
+                  // This comment is also unrelated to the tags.
+              }).toString()
+        },
     ],
 });
