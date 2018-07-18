@@ -34,6 +34,12 @@ function lint(files, ruleOptions) {
     return report;
 }
 
+program.command("format [files...]")
+    .description("Automatically formats the resmoke.py tags in list of files")
+    .action((files) => {
+        lint(files, ["error"]);
+    });
+
 program.command("add-tag <tag> [files...]")
     .description("Adds the resmoke.py tag to the list of files")
     .option("-m|--message [message]", "Optional message to include as a comment for the tag")
@@ -84,7 +90,7 @@ program.command("list-tags [files...]")
     });
 
 program.command("find-tag <tag> [files...]")
-    .description("Lists the files which use the tag")
+    .description("Lists the files which use the resmoke.py tag")
     .action((tag, files) => {
         const cwd = process.cwd() + path.sep;
         const report = lint(files, ["warn", {$_internalListTags: null}]);
