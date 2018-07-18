@@ -134,24 +134,26 @@ ruleTester.run("resmoke-tags", rule, {
         },
 
         {
-          code: (function missingTrailingComma() {
-                    //
-                    // @tags: [
-                    //   tag1,
-                    //   tag2
-                    // ]
-                    //
-                }).toString(),
+          code:  //
+              (function missingTrailingComma() {
+                  //
+                  // @tags: [
+                  //   tag1,
+                  //   tag2
+                  // ]
+                  //
+              }).toString(),
 
           errors: 1,
-          output: (function missingTrailingComma() {
-                      //
-                      // @tags: [
-                      //   tag1,
-                      //   tag2,
-                      // ]
-                      //
-                  }).toString()
+          output:  //
+              (function missingTrailingComma() {
+                  //
+                  // @tags: [
+                  //   tag1,
+                  //   tag2,
+                  // ]
+                  //
+              }).toString()
         },
     ],
 });

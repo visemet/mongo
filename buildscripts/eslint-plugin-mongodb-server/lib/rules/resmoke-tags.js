@@ -72,7 +72,7 @@ module.exports = {
          * start and end markers.
          */
         function convertToStarredBlock(initialOffset, commentLinesList) {
-            const whitespace = `${" ".repeat(initialOffset)}`;
+            const whitespace = " ".repeat(initialOffset);
             const starredLines = commentLinesList.map((line, i) => {
                 let prefix = " *";
                 if (i === 0) {
@@ -83,6 +83,23 @@ module.exports = {
                 return `${whitespace}${prefix}${line}`;
             });
             return starredLines.join("\n");
+        }
+
+        /**
+         * Converts a comment into separate-line form.
+         *
+         * @param {number} initialOffset The amount of whitespace to precede each line of the
+         * comment group with.
+         *
+         * @param {string[]} commentLinesList A list of lines to appear in the new separate-line
+         * comment.
+         *
+         * @returns {string} A representation of the comment value in separate-line form.
+         */
+        function convertToSeparateLines(initialOffset, commentLinesList) {
+            const whitespace = " ".repeat(initialOffset);
+            const separateLines = commentLinesList.map(line => `${whitespace}//${line}`);
+            return separateLines.join("\n");
         }
 
         function convertToPaddedCommentList(initialOffset, tags) {
@@ -196,7 +213,12 @@ module.exports = {
                             commentGroup[commentGroup.length - 1].range[1]
                         ];
 
-                        return fixer.replaceTextRange(range, starredBlock);
+                        const newComment =
+                            ((commentGroup[0].type === "Line")
+                                 ? convertToSeparateLines
+                                 : convertToStarredBlock)(initialOffset, commentLinesList);
+
+                        return fixer.replaceTextRange(range, newComment);
                     }
                 });
             }
