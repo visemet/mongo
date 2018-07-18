@@ -61,6 +61,7 @@ module.exports = {
 
         const sourceCode = context.getSourceCode();
         const comments = sourceCode.getAllComments();
+        const options = context.options[0] || {};
 
         //----------------------------------------------------------------------
         // Helpers
@@ -205,13 +206,18 @@ module.exports = {
                 tagsByName.set(tagNode.value, tagNode);
             }
 
-            if (context.options.length > 0 && context.options[0].$_internalAddTag !== undefined) {
-                const options = context.options[0].$_internalAddTag;
-                if (!tagsByName.has(options.tag)) {
-                    tagsByName.set(options.tag, {
-                        value: options.tag,
-                        commentBefore: options.comment,
+            if (options.$_internalAddTag !== undefined) {
+                if (!tagsByName.has(options.$_internalAddTag.tag)) {
+                    tagsByName.set(options.$_internalAddTag.tag, {
+                        value: options.$_internalAddTag.tag,
+                        commentBefore: options.$_internalAddTag.comment,
                     });
+                }
+            }
+
+            if (options.$_internalRemoveTag !== undefined) {
+                if (tagsByName.has(options.$_internalRemoveTag)) {
+                    tagsByName.delete(options.$_internalRemoveTag);
                 }
             }
 
