@@ -18,8 +18,8 @@ module.exports = {
     meta: {
         docs: {
             description: "Enforce a particular style and formatting for resmoke.py tags.",
-            category: "Fill me in",
-            recommended: false
+            category: "Stylistic Issues",
+            recommended: false,
         },
         fixable: "whitespace",
         schema: [{
@@ -27,17 +27,33 @@ module.exports = {
             properties: {
                 $_internalAddTag: {
                     type: "object",
-                    properties: {tag: {type: "string"}, comment: {type: "string"}},
+                    properties: {
+                        tag: {type: "string"},
+                        comment: {type: "string"},
+                    },
                     required: ["tag"],
+                    additionalProperties: false,
                 },
+                $_internalListTags: {type: "null"},
                 $_internalRemoveTag: {type: "string"},
+                $_internalRenameTag: {
+                    type: "object",
+                    properties: {
+                        fromTag: {type: "string"},
+                        toTag: {type: "string"},
+                    },
+                    required: ["fromTag", "toTag"],
+                    additionalProperties: false,
+                },
             },
             oneOf: [
                 {required: ["$_internalAddTag"]},
+                {required: ["$_internalListTags"]},
                 {required: ["$_internalRemoveTag"]},
+                {required: ["$_internalRenameTag"]},
             ],
             additionalProperties: false,
-        }]
+        }],
     },
 
     create(context) {
