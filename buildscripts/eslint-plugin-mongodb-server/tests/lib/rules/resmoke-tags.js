@@ -96,6 +96,19 @@ ruleTester.run("resmoke-tags", rule, {
 
           options: [{$_internalAddTag: {tag: "tag2"}}],
         },
+
+        {
+          code: (function removingTagNotPresent() {
+                    /**
+                     * @tags: [
+                     *   tag1,
+                     *   tag3,
+                     * ]
+                     */
+                }).toString(),
+
+          options: [{$_internalRemoveTag: "tag2"}],
+        },
     ],
 
     invalid: [
@@ -269,6 +282,31 @@ ruleTester.run("resmoke-tags", rule, {
                    *
                    *   # This is a comment for tag2.
                    *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code:  //
+              (function removingExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString(),
+          options: [{$_internalRemoveTag: "tag2"}],
+
+          errors: 1,
+          output:  //
+              (function removingExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag1,
                    *   tag3,
                    * ]
                    */
