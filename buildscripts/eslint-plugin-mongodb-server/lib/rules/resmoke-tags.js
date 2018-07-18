@@ -74,13 +74,13 @@ module.exports = {
         function convertToStarredBlock(initialOffset, commentLinesList) {
             const whitespace = `${" ".repeat(initialOffset)}`;
             const starredLines = commentLinesList.map((line, i) => {
-                let prefix = `${whitespace} *`;
+                let prefix = " *";
                 if (i === 0) {
                     prefix = "/**";
                 } else if (i === commentLinesList.length - 1) {
-                    prefix = `${whitespace} */`;
+                    prefix = " */";
                 }
-                return `${prefix}${line}`;
+                return `${whitespace}${prefix}${line}`;
             });
             return starredLines.join("\n");
         }
@@ -192,7 +192,7 @@ module.exports = {
                     message: "Style doesn't match",
                     fix(fixer) {
                         const range = [
-                            commentGroup[0].range[0],
+                            commentGroup[0].range[0] - initialOffset,
                             commentGroup[commentGroup.length - 1].range[1]
                         ];
 
