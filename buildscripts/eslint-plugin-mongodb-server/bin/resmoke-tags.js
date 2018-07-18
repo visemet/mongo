@@ -3,7 +3,7 @@
 const program = require("commander");
 const CLIEngine = require('eslint').CLIEngine;
 
-function lint(ruleOptions) {
+function lint(files, ruleOptions) {
     const cli = new CLIEngine({
         plugins: ["mongodb-server"],
         rules: {"mongodb-server/resmoke-tags": ruleOptions},
@@ -12,10 +12,13 @@ function lint(ruleOptions) {
 
     const report = cli.executeOnFiles(files);
     if (report.errorCount > 0) {
+        // We don't attempt to make changes to the specified files if there are non-fixable errors.
         console.error(report.results[0].messages);
         process.exit(2);
     }
+
     CLIEngine.outputFixes(report);
+    return report;
 }
 
 program.command("add-tag <tag> [files...]")
@@ -27,19 +30,26 @@ program.command("add-tag <tag> [files...]")
             options.comment = cmd.message;
         }
 
-        lint(["error", {$_internalAddTag: options}]);
+        lint(files, ["error", {$_internalAddTag: options}]);
     });
 
 program.command("remove-tag <tag> [files...]")
     .description("Removes the resmoke.py tag from the list of files")
     .action((tag, files) => {
-        lint(["error", {$_internalRemoveTag: {tag}}]);
+        lint(files, ["error", {$_internalRemoveTag: {tag}}]);
     });
 
 program.command("rename-tag <from-tag> <to-tag> [files...]")
     .description("Renames the resmoke.py tag in the list of files")
     .action((tag, files) => {
-        lint(["error", {$_internalRenameTag: {from: fromTag, toTag: toTag}}]);
+        lint(files, ["error", {$_internalRenameTag: {from: fromTag, toTag: toTag}}]);
+    });
+
+program.command("list-tags [files...]")
+    .description("Lists the resmoke.py tags used in the list of files")
+    .action((files) => {
+        const report = lint(files, ["warn", {$_internalListTags: null}]);
+        console.log(report);
     });
 
 program.parse(process.argv);
