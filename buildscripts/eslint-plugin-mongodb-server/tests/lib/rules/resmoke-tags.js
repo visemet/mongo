@@ -182,5 +182,30 @@ ruleTester.run("resmoke-tags", rule, {
                   // This comment is also unrelated to the tags.
               }).toString()
         },
+
+        {
+          code:  //
+              (function addingTag2() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString(),
+          options: [{$_internalAddTag: "tag2"}],
+
+          errors: 1,
+          output:  //
+              (function addingTag2() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString()
+        },
     ],
 });
