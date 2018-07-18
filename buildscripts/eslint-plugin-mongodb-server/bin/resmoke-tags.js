@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const path = require("path");
 const util = require("util");
 
 const program = require("commander");
@@ -64,8 +65,9 @@ program.command("rename-tag <from-tag> <to-tag> [files...]")
 program.command("list-tags [files...]")
     .description("Lists the resmoke.py tags used in the list of files")
     .action((files) => {
-        const report = lint(files, ["warn", {$_internalListTags: null}]);
         const allTags = new Set();
+        const report = lint(files, ["warn", {$_internalListTags: null}]);
+
         for (let result of report.results) {
             if (result.messages.length === 0) {
                 continue;
@@ -78,6 +80,30 @@ program.command("list-tags [files...]")
 
         for (let tag of allTags) {
             console.log(tag);
+        }
+    });
+
+program.command("find-tag <tag> [files...]")
+    .description("Lists the files which use the tag")
+    .action((tag, files) => {
+        const cwd = process.cwd() + path.sep;
+        const report = lint(files, ["warn", {$_internalListTags: null}]);
+
+        for (let result of report.results) {
+            if (result.messages.length === 0) {
+                continue;
+            }
+
+            const tags = JSON.parse(result.messages[0].message);
+            if (tags.includes(tag)) {
+                // ESLint returns 'result.filePath' as an absolute path so we strip off the prefix
+                // to make it a path relative to the current working directory.
+                if (result.filePath.startsWith(cwd)) {
+                    console.log(result.filePath.substring(cwd.length));
+                } else {
+                    console.log(result.filePath);
+                }
+            }
         }
     });
 
