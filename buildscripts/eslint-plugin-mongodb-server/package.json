@@ -8,6 +8,9 @@
     "eslint-plugin"
   ],
   "main": "lib/index.js",
+  "bin": {
+    "resmoke-tags": "bin/resmoke-tags.js"
+  },
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha --recursive tests/"
   },
