@@ -36,7 +36,7 @@ program.command("add-tag <tag> [files...]")
 program.command("remove-tag <tag> [files...]")
     .description("Removes the resmoke.py tag from the list of files")
     .action((tag, files) => {
-        lint(files, ["error", {$_internalRemoveTag: {tag}}]);
+        lint(files, ["error", {$_internalRemoveTag: tag}]);
     });
 
 program.command("rename-tag <from-tag> <to-tag> [files...]")
