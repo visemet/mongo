@@ -142,10 +142,6 @@ module.exports = {
                 const tagNode = tags[i];
 
                 if (tagNode.commentBefore !== undefined) {
-                    if (i > 0) {
-                        commentLinesList.push("");
-                    }
-
                     for (let line of wrap(tagNode.commentBefore).split(/\r?\n/)) {
                         commentLinesList.push(`${commentPrefix}${line}`);
                     }
