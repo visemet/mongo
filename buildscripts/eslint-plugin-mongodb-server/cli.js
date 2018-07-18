@@ -19,10 +19,11 @@ program.command("add-tag <tag> [files...]")
             fix: true,
         });
 
-        const result = cli.executeOnFiles(files);
-        if (result.errorCount > 0) {
-            console.error(result.results[0].messages);
+        const report = cli.executeOnFiles(files);
+        if (report.errorCount > 0) {
+            console.error(report.results[0].messages);
         }
+        CLIEngine.outputFixes(report);
     });
 
 program.parse(process.argv);
