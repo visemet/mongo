@@ -203,7 +203,10 @@ module.exports = {
             }
 
             if (options.$_internalAddTag !== undefined) {
-                if (!tagsByName.has(options.$_internalAddTag.tag)) {
+                if (tagsByName.has(options.$_internalAddTag.tag)) {
+                    tagsByName.get(options.$_internalAddTag.tag).commentBefore =
+                        options.$_internalAddTag.comment;
+                } else {
                     tagsByName.set(options.$_internalAddTag.tag, {
                         value: options.$_internalAddTag.tag,
                         commentBefore: options.$_internalAddTag.comment,

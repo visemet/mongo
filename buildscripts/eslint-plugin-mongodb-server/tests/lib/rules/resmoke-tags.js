@@ -287,6 +287,34 @@ ruleTester.run("resmoke-tags", rule, {
 
         {
           code:  //
+              (function updatingCommentOfExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   # This is an existing comment for tag2.
+                   *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString(),
+          options: [{$_internalAddTag: {tag: "tag2", comment: "This is a NEW comment for tag2."}}],
+
+          errors: 1,
+          output:  //
+              (function updatingCommentOfExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   # This is a NEW comment for tag2.
+                   *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code:  //
               (function removingExistingTag() {
                   /**
                    * @tags: [
