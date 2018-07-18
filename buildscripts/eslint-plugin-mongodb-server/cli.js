@@ -13,9 +13,14 @@ program.command("add-tag <tag> [files...]")
         // not get validated for some reason.
         plugins.load("mongodb-server");
 
+        let options = {tag};
+        if (cmd.message !== undefined) {
+            options.comment = cmd.message;
+        }
+
         var cli = new CLIEngine({
             plugins: ["mongodb-server"],
-            rules: {"mongodb-server/resmoke-tags": ["error", {$_internalAddTag: tag}]},
+            rules: {"mongodb-server/resmoke-tags": ["error", {$_internalAddTag: options}]},
             fix: true,
         });
 

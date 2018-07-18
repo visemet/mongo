@@ -25,9 +25,17 @@ module.exports = {
         schema: [{
             type: "object",
             properties: {
-                $_internalAddTag: {type: "string"},
+                $_internalAddTag: {
+                    type: "object",
+                    properties: {tag: {type: "string"}, comment: {type: "string"}},
+                    required: ["tag"],
+                },
                 $_internalRemoveTag: {type: "string"},
             },
+            oneOf: [
+                {required: ["$_internalAddTag"]},
+                {required: ["$_internalRemoveTag"]},
+            ],
             additionalProperties: false,
         }]
     },
@@ -182,11 +190,12 @@ module.exports = {
             }
 
             if (context.options.length > 0 && context.options[0].$_internalAddTag !== undefined) {
-                // TODO: We'll want to update the tag's message once that is also passed as an
-                // option.
-                if (!tagsByName.has(context.options[0].$_internalAddTag)) {
-                    tagsByName.set(context.options[0].$_internalAddTag,
-                                   {value: context.options[0].$_internalAddTag});
+                const options = context.options[0].$_internalAddTag;
+                if (!tagsByName.has(options.tag)) {
+                    tagsByName.set(options.tag, {
+                        value: options.tag,
+                        commentBefore: options.comment,
+                    });
                 }
             }
 
