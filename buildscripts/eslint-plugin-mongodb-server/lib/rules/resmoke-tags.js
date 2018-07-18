@@ -39,10 +39,10 @@ module.exports = {
                 $_internalRenameTag: {
                     type: "object",
                     properties: {
-                        fromTag: {type: "string"},
-                        toTag: {type: "string"},
+                        from: {type: "string"},
+                        to: {type: "string"},
                     },
-                    required: ["fromTag", "toTag"],
+                    required: ["from", "to"],
                     additionalProperties: false,
                 },
             },
@@ -217,6 +217,27 @@ module.exports = {
             if (options.$_internalRemoveTag !== undefined) {
                 if (tagsByName.has(options.$_internalRemoveTag)) {
                     tagsByName.delete(options.$_internalRemoveTag);
+                }
+            }
+
+            if (options.$_internalRenameTag !== undefined) {
+                if (tagsByName.has(options.$_internalRenameTag.from)) {
+                    if (tagsByName.has(options.$_internalRenameTag.to)) {
+                        context.report({
+                            loc: {
+                                start: commentGroup[0].loc.start,
+                                end: commentGroup[commentGroup.length - 1].loc.end
+                            },
+                            message: "Tag '" + options.$_internalRenameTag.to +
+                                "' already exists in the file",
+                        });
+                        return;
+                    }
+
+                    const tagNode = tagsByName.get(options.$_internalRenameTag.from);
+                    tagsByName.delete(options.$_internalRenameTag.from);
+                    tagNode.value = options.$_internalRenameTag.to;
+                    tagsByName.set(options.$_internalRenameTag.to, tagNode);
                 }
             }
 

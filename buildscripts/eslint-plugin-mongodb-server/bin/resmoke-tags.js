@@ -46,7 +46,7 @@ program.command("remove-tag <tag> [files...]")
 program.command("rename-tag <from-tag> <to-tag> [files...]")
     .description("Renames the resmoke.py tag in the list of files")
     .action((tag, files) => {
-        lint(files, ["error", {$_internalRenameTag: {from: fromTag, toTag: toTag}}]);
+        lint(files, ["error", {$_internalRenameTag: {from: fromTag, to: toTag}}]);
     });
 
 program.command("list-tags [files...]")

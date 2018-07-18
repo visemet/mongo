@@ -107,6 +107,19 @@ ruleTester.run("resmoke-tags", rule, {
 
           options: [{$_internalRemoveTag: "tag2"}],
         },
+
+        {
+          code: (function renamingTagNotPresent() {
+                    /**
+                     * @tags: [
+                     *   tag1,
+                     *   tag3,
+                     * ]
+                     */
+                }).toString(),
+
+          options: [{$_internalRenameTag: {from: "tag2", to: "tag1"}}],
+        },
     ],
 
     invalid: [
@@ -311,6 +324,41 @@ ruleTester.run("resmoke-tags", rule, {
                    * ]
                    */
               }).toString()
+        },
+
+        {
+          code:  //
+              (function renamingExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag2,
+                   * ]
+                   */
+              }).toString(),
+          options: [{$_internalRenameTag: {from: "tag2", to: "tag1"}}],
+
+          errors: 1,
+          output:  //
+              (function renamingExistingTag() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code: (function renamingExistingTagToAnotherAlreadyExistingTag() {
+                    /**
+                     * @tags: [
+                     *   tag1,
+                     *   tag2,
+                     * ]
+                     */
+                }).toString(),
+          options: [{$_internalRenameTag: {from: "tag2", to: "tag1"}}],
+          errors: [{message: "Tag 'tag1' already exists in the file"}],
         },
 
         {
