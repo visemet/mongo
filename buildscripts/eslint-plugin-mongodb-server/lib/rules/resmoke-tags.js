@@ -72,9 +72,17 @@ module.exports = {
          * start and end markers.
          */
         function convertToStarredBlock(initialOffset, commentLinesList) {
-            const prefix = `${" ".repeat(initialOffset)}`;
-            const starredLines = commentLinesList.map(line => `${prefix} *${line}`);
-            return `\n${starredLines.join("\n")}\n${prefix} `;
+            const whitespace = `${" ".repeat(initialOffset)}`;
+            const starredLines = commentLinesList.map((line, i) => {
+                let prefix = `${whitespace} *`;
+                if (i === 0) {
+                    prefix = "/**";
+                } else if (i === commentLinesList.length - 1) {
+                    prefix = `${whitespace} */`;
+                }
+                return `${prefix}${line}`;
+            });
+            return starredLines.join("\n");
         }
 
         function convertToPaddedCommentList(initialOffset, tags) {
@@ -168,17 +176,13 @@ module.exports = {
                 // XXX: Is there a different way we could have split up 'commentLines' so we don't
                 // have to remove the empty string elements at the very beginning and at the very
                 // end?
-                const commentLinesList =
-                    [].concat(commentLines.slice(1, lineStart),
-                              newArray,
-                              commentLines.slice(lineEnd, commentLines.length - 1));
+                const commentLinesList = [].concat(
+                    commentLines.slice(0, lineStart), newArray, commentLines.slice(lineEnd));
 
-                const starredBlock =
-                    `/**${convertToStarredBlock(initialOffset, commentLinesList)}*/`;
+                const starredBlock = convertToStarredBlock(initialOffset, commentLinesList);
                 console.log('converted """', starredBlock, '"""');
-                console.log('original """',
-                            `/*${convertToStarredBlock(initialOffset, commentLines)}*/`,
-                            '"""');
+                console.log(
+                    'original """', convertToStarredBlock(initialOffset, commentLines), '"""');
 
                 context.report({
                     loc: {
