@@ -114,19 +114,19 @@ module.exports = {
             const commentLinesList = [" @tags: ["];
 
             for (let i = 0; i < tags.length; ++i) {
-                const tagInfo = tags[i];
+                const tagNode = tags[i];
 
-                if (tagInfo.comment !== undefined) {
+                if (tagNode.commentBefore !== undefined) {
                     if (i > 0) {
                         commentLinesList.push("");
                     }
 
-                    for (let line of wrap(tagInfo.comment).split(/\r?\n/)) {
+                    for (let line of wrap(tagNode.commentBefore).split(/\r?\n/)) {
                         commentLinesList.push(`${commentPrefix}${line}`);
                     }
                 }
 
-                commentLinesList.push(` ${indent}${tagInfo.name},`);
+                commentLinesList.push(` ${indent}${tagNode.value},`);
             }
 
             commentLinesList.push(" ]");
@@ -165,25 +165,47 @@ module.exports = {
                 return;
             }
 
-            const tags = [];
+            const tagsByName = new Map();
 
             for (let tagNode of doc.contents.items) {
-                const tagInfo = {name: tagNode.value};
-
-                if (tagNode.commentBefore !== undefined) {
-                    const comment = tagNode.commentBefore.split(/\r?\n/)
-                                        .map(commentLine => commentLine.trimStart())
-                                        .join(" ");
-                    tagInfo.comment = comment;
+                if (tagsByName.has(tagNode.value)) {
+                    context.report({
+                        loc: {
+                            start: commentGroup[0].loc.start,
+                            end: commentGroup[commentGroup.length - 1].loc.end
+                        },
+                        message: `The tag ${tagNode.value} appears multiple times in the list`,
+                    });
+                    return;
                 }
+                tagsByName.set(tagNode.value, tagNode);
+            }
 
-                tags.push(tagInfo);
+            if (context.options.length > 0 && context.options[0].$_internalAddTag !== undefined) {
+                // TODO: We'll want to update the tag's message once that is also passed as an
+                // option.
+                if (!tagsByName.has(context.options[0].$_internalAddTag)) {
+                    tagsByName.set(context.options[0].$_internalAddTag,
+                                   {value: context.options[0].$_internalAddTag});
+                }
+            }
+
+            for (let tagNode of tagsByName.values()) {
+                if (tagNode.commentBefore !== undefined) {
+                    tagNode.commentBefore = tagNode.commentBefore.split(/\r?\n/)
+                                                .map(commentLine => commentLine.trimStart())
+                                                .join(" ");
+                }
             }
 
             const initialOffset = commentGroup[0].loc.start.column;
             console.log('initialOffset', initialOffset);
 
-            const newArray = convertToPaddedCommentList(initialOffset, tags);
+            const newArray = convertToPaddedCommentList(
+                initialOffset,
+                Array.from(tagsByName.values())
+                    .sort((tagNode1, tagNode2) => tagNode1.value.localeCompare(tagNode2.value)));
+
             console.log('newArray', newArray);
 
             const diff = jsdiff.diffArrays(oldArray, newArray);
