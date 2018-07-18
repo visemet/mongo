@@ -224,6 +224,32 @@ ruleTester.run("resmoke-tags", rule, {
 
         {
           code:  //
+              (function addingTagAlreadyPresentButInWrongOrder() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag3,
+                   *   tag2,
+                   * ]
+                   */
+              }).toString(),
+          options: [{$_internalAddTag: {tag: "tag2"}}],
+
+          errors: 1,
+          output:  //
+              (function addingTagAlreadyPresentButInWrongOrder() {
+                  /**
+                   * @tags: [
+                   *   tag1,
+                   *   tag2,
+                   *   tag3,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code:  //
               (function addingNewTagWithAComment() {
                   /**
                    * @tags: [
