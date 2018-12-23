@@ -236,6 +236,7 @@
 
     for (let dbName of dbNames) {
         let result;
+        let clusterTime;
         let hasTransientError;
 
         const setTransientError = (e) => {
@@ -249,7 +250,7 @@
         };
 
         do {
-            const clusterTime = sessions[0].getOperationTime();
+            clusterTime = sessions[0].getOperationTime();
             waitForSecondaries(clusterTime);
 
             for (let session of sessions) {
