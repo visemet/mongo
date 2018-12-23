@@ -284,11 +284,9 @@
                 try {
                     session.commitTransaction();
                 } catch (e) {
-                    if (setTransientError(e)) {
-                        continue;
+                    if (!setTransientError(e)) {
+                        throw e;
                     }
-
-                    throw e;
                 }
             }
         } while (hasTransientError);
