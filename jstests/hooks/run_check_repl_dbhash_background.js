@@ -265,7 +265,7 @@
                 // We abort each of the transactions started on the nodes if one of them returns an
                 // error while running the dbHash check.
                 for (let session of sessions) {
-                    session.abortTransaction();
+                    session.abortTransaction_forTesting();
                 }
 
                 if (setTransientError(e)) {
