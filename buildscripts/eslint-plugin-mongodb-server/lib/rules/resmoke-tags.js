@@ -177,7 +177,8 @@ module.exports = {
             let doc;
 
             if (match === null) {
-                lineStart = (commentJoined.match(/\n/g) || []).length;
+                lineStart = (commentJoined.match(/\n/g) || []).length +
+                    ((commentGroup[0].type === "Line") ? 1 : 0);
                 lineEnd = lineStart;
                 doc = {contents: {items: []}};
             } else {

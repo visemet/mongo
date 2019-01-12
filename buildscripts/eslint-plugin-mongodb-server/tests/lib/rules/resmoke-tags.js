@@ -322,16 +322,19 @@ function addingNewTagWithoutExistingTagsAnnotationOrComment() {
 
         {
           code:  //
-              (function addingNewTagWithoutExistingTagsAnnotationButHasComment() {
+              (function addingNewTagWithoutExistingTagsAnnotationButHasBlockComment() {
+                  var a = 1;
                   /**
                    * This is a comment that likely describes what the test is meant to do.
                    */
+                  var b = 2;
               }).toString(),
           options: [{$_internalAddTag: {tag: "tag2", comment: "This is a comment for tag2."}}],
 
           errors: 1,
           output:  //
-              (function addingNewTagWithoutExistingTagsAnnotationButHasComment() {
+              (function addingNewTagWithoutExistingTagsAnnotationButHasBlockComment() {
+                  var a = 1;
                   /**
                    * This is a comment that likely describes what the test is meant to do.
                    * @tags: [
@@ -339,6 +342,29 @@ function addingNewTagWithoutExistingTagsAnnotationOrComment() {
                    *   tag2,
                    * ]
                    */
+                  var b = 2;
+              }).toString()
+        },
+
+        {
+          code:  //
+              (function addingNewTagWithoutExistingTagsAnnotationButHasLineComment() {
+                  var a = 1;
+                  // This is a comment that likely describes what the test is meant to do.
+                  var b = 2;
+              }).toString(),
+          options: [{$_internalAddTag: {tag: "tag2", comment: "This is a comment for tag2."}}],
+
+          errors: 1,
+          output:  //
+              (function addingNewTagWithoutExistingTagsAnnotationButHasLineComment() {
+                  var a = 1;
+                  // This is a comment that likely describes what the test is meant to do.
+                  // @tags: [
+                  //   # This is a comment for tag2.
+                  //   tag2,
+                  // ]
+                  var b = 2;
               }).toString()
         },
 
