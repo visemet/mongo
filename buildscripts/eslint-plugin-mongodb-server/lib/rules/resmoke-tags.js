@@ -96,7 +96,8 @@ module.exports = {
          * @returns {string} A representation of the comment value in starred-block form, excluding
          * start and end markers.
          */
-        function convertToStarredBlock(initialOffset, commentLinesList) {
+        function convertToStarredBlock(
+            initialOffset, commentLinesList, {addTrailingNewline = false} = {}) {
             const whitespace = " ".repeat(initialOffset);
             const starredLines = commentLinesList.map((line, i) => {
                 let prefix = " *";
@@ -107,7 +108,8 @@ module.exports = {
                 }
                 return `${whitespace}${prefix}${line}`;
             });
-            return starredLines.join("\n");
+            const suffix = addTrailingNewline ? `\n${whitespace}` : "";
+            return starredLines.join("\n") + suffix;
         }
 
         /**
@@ -121,10 +123,12 @@ module.exports = {
          *
          * @returns {string} A representation of the comment value in separate-line form.
          */
-        function convertToSeparateLines(initialOffset, commentLinesList) {
+        function convertToSeparateLines(
+            initialOffset, commentLinesList, {addTrailingNewline = false} = {}) {
             const whitespace = " ".repeat(initialOffset);
             const separateLines = commentLinesList.map(line => `${whitespace}//${line}`);
-            return separateLines.join("\n");
+            const suffix = addTrailingNewline ? `\n${whitespace}` : "";
+            return separateLines.join("\n") + suffix;
         }
 
         function convertToPaddedCommentList(initialOffset, tags) {
@@ -154,36 +158,50 @@ module.exports = {
             return commentLinesList;
         }
 
-        function checkCommentGroup(commentGroup) {
+        function checkCommentGroup(commentGroup,
+                                   {
+                                       allowMissingTagsAnnotation = false,  //
+                                       needsNewCommentBlock = false,
+                                   } = {}) {
             const commentLines = getCommentLines(commentGroup);
 
             const commentJoined = commentLines.join("\n");
             const match = JSTEST_TAG_PATTERN.exec(commentJoined);
 
-            if (match === null) {
-                return;
+            if (match === null && !allowMissingTagsAnnotation) {
+                return false;
             }
 
-            const lineStart = (commentJoined.substring(0, match.index).match(/\n/g) || []).length;
-            const numLines = (match[1].match(/\n/g) || []).length;
-            const lineEnd = lineStart + numLines + 1;
-            const oldArray = commentLines.slice(lineStart, lineEnd);
-
+            let lineStart;
+            let lineEnd;
             let doc;
-            try {
-                doc = yaml.parseDocument(match[1]);
-            } catch (e) {
-                // TODO: We should probably re-throw this exception or report a failure using
-                // 'context' still.
-                console.error("Found invalid YAML when parsing @tags comment: " + e.message);
-                throw e;
+
+            if (match === null) {
+                lineStart = (commentJoined.match(/\n/g) || []).length;
+                lineEnd = lineStart;
+                doc = {contents: {items: []}};
+            } else {
+                lineStart = (commentJoined.substring(0, match.index).match(/\n/g) || []).length;
+                const numLines = (match[1].match(/\n/g) || []).length;
+                lineEnd = lineStart + numLines + 1;
+
+                try {
+                    doc = yaml.parseDocument(match[1]);
+                } catch (e) {
+                    // TODO: We should probably re-throw this exception or report a failure using
+                    // 'context' still.
+                    console.error("Found invalid YAML when parsing @tags comment: " + e.message);
+                    throw e;
+                }
+
+                if (doc.contents.items.length === 0) {
+                    // TODO: Use context.report() here to propagate this as an error.
+                    console.error("tags list should not be empty");
+                    return true;
+                }
             }
 
-            if (doc.contents.items.length === 0) {
-                // TODO: Use context.report() here to propagate this as an error.
-                console.error("tags list should not be empty");
-                return;
-            }
+            const oldArray = commentLines.slice(lineStart, lineEnd);
 
             const tagsByName = new Map();
 
@@ -222,7 +240,7 @@ module.exports = {
                     message: "{{ tags }}",
                     data: {tags: JSON.stringify(Array.from(tagsByName.keys()))},
                 });
-                return;
+                return true;
             }
 
             if (options.$_internalRemoveTag !== undefined) {
@@ -242,7 +260,7 @@ module.exports = {
                             message: "Tag '" + options.$_internalRenameTag.to +
                                 "' already exists in the file",
                         });
-                        return;
+                        return true;
                     }
 
                     const tagNode = tagsByName.get(options.$_internalRenameTag.from);
@@ -267,7 +285,8 @@ module.exports = {
                     .sort((tagNode1, tagNode2) => tagNode1.value.localeCompare(tagNode2.value)));
 
             const diff = jsdiff.diffArrays(oldArray, newArray);
-            if (diff.length > 1) {
+
+            if (diff.filter(change => change.added || change.removed).length > 0) {
                 context.report({
                     loc: {
                         start: commentGroup[0].loc.start,
@@ -285,14 +304,18 @@ module.exports = {
                                                            commentLines.slice(lineEnd));
 
                         const newComment =
-                            ((commentGroup[0].type === "Line")
-                                 ? convertToSeparateLines
-                                 : convertToStarredBlock)(initialOffset, commentLinesList);
+                            ((commentGroup[0].type === "Line") ? convertToSeparateLines
+                                                               : convertToStarredBlock)(
+                                initialOffset,
+                                commentLinesList,
+                                {addTrailingNewline: needsNewCommentBlock});
 
                         return fixer.replaceTextRange(range, newComment);
                     }
                 });
             }
+
+            return true;
         }
 
         //----------------------------------------------------------------------
@@ -307,24 +330,53 @@ module.exports = {
 
                 // The logic for grouping comments is copied from v5.1.0 of the
                 // multiline-comment-style.js rule.
-                comments
-                    .reduce(
-                        (commentGroups, comment, index, commentList) => {
-                            const tokenBefore = sourceCode.getTokenOrCommentBefore(comment);
+                const hasTagsAnnotation =
+                    comments
+                        .reduce(
+                            (commentGroups, comment, index, commentList) => {
+                                const tokenBefore = sourceCode.getTokenOrCommentBefore(comment);
 
-                            if (comment.type === "Line" && index > 0 &&
-                                commentList[index - 1].type === "Line" && tokenBefore &&
-                                tokenBefore.loc.end.line === comment.loc.start.line - 1 &&
-                                tokenBefore === commentList[index - 1]) {
-                                commentGroups[commentGroups.length - 1].push(comment);
-                            } else {
-                                commentGroups.push([comment]);
-                            }
+                                if (comment.type === "Line" && index > 0 &&
+                                    commentList[index - 1].type === "Line" && tokenBefore &&
+                                    tokenBefore.loc.end.line === comment.loc.start.line - 1 &&
+                                    tokenBefore === commentList[index - 1]) {
+                                    commentGroups[commentGroups.length - 1].push(comment);
+                                } else {
+                                    commentGroups.push([comment]);
+                                }
 
-                            return commentGroups;
-                        },
-                        [])
-                    .forEach(checkCommentGroup);
+                                return commentGroups;
+                            },
+                            [])
+                        .reduce((hasTagsAnnotation, commentGroup) => {
+                            return checkCommentGroup(commentGroup) || hasTagsAnnotation;
+                        }, false);
+
+                if (!hasTagsAnnotation && options.$_internalAddTag !== undefined) {
+                    const firstStatement = sourceCode.ast.body[0];
+
+                    let needsNewCommentBlock = false;
+                    let comment = comments.find((comment) => {
+                        return comment.loc.start.line < 10;
+                    });
+
+                    if (comment === undefined) {
+                        comment = {
+                            type: "Block",
+                            value: "*\n",
+                            start: firstStatement.start,
+                            end: firstStatement.start,
+                            loc: {start: firstStatement.loc.start, end: firstStatement.loc.end},
+                            range: [firstStatement.range[0], firstStatement.range[0]],
+                        };
+                        needsNewCommentBlock = true;
+                    }
+
+                    checkCommentGroup([comment], {
+                        allowMissingTagsAnnotation: true,
+                        needsNewCommentBlock: needsNewCommentBlock,
+                    });
+                }
             }
 
         };

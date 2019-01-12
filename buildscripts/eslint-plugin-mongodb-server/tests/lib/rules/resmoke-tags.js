@@ -300,6 +300,50 @@ ruleTester.run("resmoke-tags", rule, {
 
         {
           code:  //
+              `
+function addingNewTagWithoutExistingTagsAnnotationOrComment() {
+    var x = 1;
+}`,
+          options: [{$_internalAddTag: {tag: "tag2", comment: "This is a comment for tag2."}}],
+
+          errors: 1,
+          output:  //
+              `
+/**
+ * @tags: [
+ *   # This is a comment for tag2.
+ *   tag2,
+ * ]
+ */
+function addingNewTagWithoutExistingTagsAnnotationOrComment() {
+    var x = 1;
+}`
+        },
+
+        {
+          code:  //
+              (function addingNewTagWithoutExistingTagsAnnotationButHasComment() {
+                  /**
+                   * This is a comment that likely describes what the test is meant to do.
+                   */
+              }).toString(),
+          options: [{$_internalAddTag: {tag: "tag2", comment: "This is a comment for tag2."}}],
+
+          errors: 1,
+          output:  //
+              (function addingNewTagWithoutExistingTagsAnnotationButHasComment() {
+                  /**
+                   * This is a comment that likely describes what the test is meant to do.
+                   * @tags: [
+                   *   # This is a comment for tag2.
+                   *   tag2,
+                   * ]
+                   */
+              }).toString()
+        },
+
+        {
+          code:  //
               (function updatingCommentOfExistingTag() {
                   /**
                    * @tags: [
