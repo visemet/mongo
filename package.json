@@ -1,0 +1,5 @@
+{
+   "dependencies": {
+      "eslint-plugin-mongodb-server": "file:buildscripts/eslint-plugin-mongodb-server"
+   }
+}
