@@ -26,3 +26,4 @@ executor:
   config:
     shell_options:
       readMode: commands
+      ssl: ''

@@ -42,5 +42,6 @@ selector:
 executor:
   config:
     shell_options:
-      readMode: commands
       eval: var testingReplication = true;
+      readMode: commands
+      ssl: ''
