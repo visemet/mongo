@@ -8,6 +8,18 @@ selector:
   # Transactions are not supported on MongoDB standalone nodes, so we do not run these tests in the
   # 'core' suite. Instead we run them against a 1-node replica set in the 'core_txns' suite.
   - jstests/core/txns/**/*.js
+  # The find command fails with a different error message than the one expected when given a
+  # non-string collection name argument.
+  - jstests/core/commands_with_uuid.js
+  # dbadmin.js is timing-sensitive when reporting whether there is clock skew.
+  - jstests/core/dbadmin.js
+  # These test run commands using legacy queries, which are not supported on sessions.
+  - jstests/core/exhaust.js
+  - jstests/core/validate_cmd_ns.js
+  # Causal consistency is enabled when the retryWrites options is specified in the connection
+  # string. This leads to afterClusterTime being specified as a readConcern option, which conflicts
+  # with afterOpTime being specified as a readConcern option by the test.
+  - jstests/core/read_after_optime.js
   exclude_with_any_tags:
   # Tests that aren't testing specific behaviors of authentication or authorization assume they are
   # only ever being run with the __system user, which may not be compatible with the more
