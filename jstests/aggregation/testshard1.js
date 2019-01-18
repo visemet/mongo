@@ -1,8 +1,9 @@
+// @tags: [
+//   requires_spawning_own_processes,
+// ]
+
 load('jstests/aggregation/extras/utils.js');
-                                       // For planHasStage.
-                                       // @tags: [
-                                       //   requires_spawning_own_processes,
-                                       // ]
+load('jstests/libs/analyze_plan.js');  // For planHasStage.
 
 jsTestLog("Creating sharded cluster");
 var shardedAggTest =
