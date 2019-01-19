@@ -35,6 +35,7 @@ else:
 
 from . import pipe  # pylint: disable=wrong-import-position
 from .. import utils  # pylint: disable=wrong-import-position
+from .. import config  # pylint: disable=wrong-import-position
 
 # Attempt to avoid race conditions (e.g. hangs caused by a file descriptor being left open) when
 # starting subprocesses concurrently from multiple threads by guarding calls to subprocess.Popen()
@@ -97,6 +98,11 @@ class Process(object):
         # extension on Windows have a ".exe" extension.
         if sys.platform == "win32" and not os.path.splitext(args[0])[1]:
             args[0] += ".exe"
+
+        if config.RR_MODE == "record":
+            args = ["rr", "record"] + args
+        elif config.RR_MODE == "chaos":
+            args = ["rr", "record", "--chaos"] + args
 
         self.logger = logger
         self.args = args

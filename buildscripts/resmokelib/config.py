@@ -72,6 +72,7 @@ DEFAULTS = {
     "repeat_tests": 1,
     "report_failure_status": "fail",
     "report_file": None,
+    "rr_mode": "off",
     "seed": long(time.time() * 256),  # Taken from random.py code in Python 2.7.
     "service_executor": None,
     "shell_conn_string": None,
@@ -328,6 +329,9 @@ REPORT_FILE = None
 
 # IF set, then mongod/mongos's started by resmoke.py will use the specified service executor
 SERVICE_EXECUTOR = None
+
+# If set, then processes started by resmoke.py will be run under rr.
+RR_MODE = None
 
 # If set, resmoke will override the default fixture and connect to the fixture specified by this
 # connection string instead.

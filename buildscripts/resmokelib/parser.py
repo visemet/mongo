@@ -174,6 +174,10 @@ def _make_parser():  # pylint: disable=too-many-statements
     parser.add_option("--reportFile", dest="report_file", metavar="REPORT",
                       help="Writes a JSON file with test status and timing information.")
 
+    parser.add_option("--rr", type="choice", action="store", dest="rr_mode",
+                      choices=("off", "record", "chaos"), metavar="MODE",
+                      help="The mode for resmoke.py to use when running processes under rr.")
+
     parser.add_option("--seed", type="int", dest="seed", metavar="SEED",
                       help=("Seed for the random number generator. Useful in combination with the"
                             " --shuffle option for producing a consistent test execution order."))
@@ -421,6 +425,7 @@ def _update_config_vars(values):  # pylint: disable=too-many-statements
     _config.REPEAT_TESTS = config.pop("repeat_tests")
     _config.REPORT_FAILURE_STATUS = config.pop("report_failure_status")
     _config.REPORT_FILE = config.pop("report_file")
+    _config.RR_MODE = config.pop("rr_mode")
     _config.SERVICE_EXECUTOR = config.pop("service_executor")
     _config.SHELL_READ_MODE = config.pop("shell_read_mode")
     _config.SHELL_WRITE_MODE = config.pop("shell_write_mode")
