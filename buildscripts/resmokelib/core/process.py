@@ -33,6 +33,8 @@ if os.name == "posix" and sys.version_info[0] == 2:
 else:
     import subprocess
 
+import psutil  # pylint: disable=wrong-import-position
+
 from . import pipe  # pylint: disable=wrong-import-position
 from .. import utils  # pylint: disable=wrong-import-position
 from .. import config  # pylint: disable=wrong-import-position
@@ -205,6 +207,20 @@ class Process(object):
                 return_code = win32process.GetExitCodeProcess(self._process._handle)
                 if return_code == win32con.STILL_ACTIVE:
                     raise
+        elif config.RR_MODE in ("record", "chaos"):
+            try:
+                psutil_process = psutil.Process(self.pid)
+                child_processes = psutil_process.children()
+            except psutil.NoSuchProcess:
+                pass
+            else:
+                assert len(child_processes) in (0, 1)
+
+                if child_processes:
+                    if kill:
+                        child_processes[0].kill()
+                    else:
+                        child_processes[0].terminate()
         else:
             try:
                 if kill:
