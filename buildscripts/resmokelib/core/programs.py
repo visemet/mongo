@@ -62,9 +62,8 @@ def mongod_program(  # pylint: disable=too-many-branches
     if config.MONGOD_SET_PARAMETERS is not None:
         suite_set_parameters.update(utils.load_yaml(config.MONGOD_SET_PARAMETERS))
 
-    # Set default log verbosity levels if none were specified.
-    if "logComponentVerbosity" not in suite_set_parameters:
-        suite_set_parameters["logComponentVerbosity"] = default_mongod_log_component_verbosity()
+    # We remove the log verbosity levels to make the test suite less chatty.
+    suite_set_parameters.pop("logComponentVerbosity", None)
 
     # orphanCleanupDelaySecs controls an artificial delay before cleaning up an orphaned chunk
     # that has migrated off of a shard, meant to allow most dependent queries on secondaries to
@@ -220,30 +219,6 @@ def mongo_shell_program(  # pylint: disable=too-many-branches,too-many-locals,to
             test_data[opt_name] = opt_default
 
     global_vars["TestData"] = test_data
-
-    # Initialize setParameters for mongod and mongos, to be passed to the shell via TestData. Since
-    # they are dictionaries, they will be converted to JavaScript objects when passed to the shell
-    # by the _format_shell_vars() function.
-    mongod_set_parameters = {}
-    if config.MONGOD_SET_PARAMETERS is not None:
-        if "setParameters" in test_data:
-            raise ValueError("setParameters passed via TestData can only be set from either the"
-                             " command line or the suite YAML, not both")
-        mongod_set_parameters = utils.load_yaml(config.MONGOD_SET_PARAMETERS)
-
-    # If the 'logComponentVerbosity' setParameter for mongod was not already specified, we set its
-    # value to a default.
-    mongod_set_parameters.setdefault("logComponentVerbosity",
-                                     default_mongod_log_component_verbosity())
-
-    test_data["setParameters"] = mongod_set_parameters
-
-    if config.MONGOS_SET_PARAMETERS is not None:
-        if "setParametersMongos" in test_data:
-            raise ValueError("setParametersMongos passed via TestData can only be set from either"
-                             " the command line or the suite YAML, not both")
-        mongos_set_parameters = utils.load_yaml(config.MONGOS_SET_PARAMETERS)
-        test_data["setParametersMongos"] = mongos_set_parameters
 
     # There's a periodic background thread that checks for and aborts expired transactions.
     # "transactionLifetimeLimitSeconds" specifies for how long a transaction can run before expiring
